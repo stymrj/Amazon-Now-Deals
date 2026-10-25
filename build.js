@@ -22,7 +22,9 @@ const header = `// ==UserScript==
 // @description  Scan Amazon Now by category and keyword, rank deals by real savings, and track price drops between scans.
 // @match        https://www.amazon.in/*
 // @run-at       document-idle
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @connect      api.telegram.org
 // ==/UserScript==
 `;
 const launcher = `

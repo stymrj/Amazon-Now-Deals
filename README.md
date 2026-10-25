@@ -28,6 +28,18 @@ Scans Amazon Now by category and keyword, ranks products by real savings, and tr
 
 `/` search, `S` scan or stop, `Esc` close.
 
+## Telegram alerts
+
+Hunter can send new deals, price drops and cheaper saved items to your Telegram.
+
+1. In Telegram, open `@BotFather`, send `/newbot`, and copy the bot token.
+2. Open your new bot and press **Start**.
+3. Get your chat ID from `@userinfobot`, or open `https://api.telegram.org/bot<token>/getUpdates` and copy `chat.id`.
+4. In Hunter's sidebar, open **Telegram alerts**, paste the token and chat ID, press **Send test message**, then switch alerts on.
+5. Optional: set **Auto-scan** (for example every 15 minutes) and keep the tab open.
+
+Each deal is sent once, and again only if its price drops further. Use the userscript for alerts: some shops block bookmarklets from calling Telegram, while the userscript sends through `GM_xmlhttpRequest`. The token is stored only in your browser.
+
 ## How it gets data
 
 Uses the `tez/browse` JSON endpoints that the Amazon Now pages use, from your logged-in session. The brand ID is detected from the page or entered in the sidebar.
