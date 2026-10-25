@@ -1,88 +1,54 @@
-# ⚡ PriceDrop Hunter for Amazon Now
+# PriceDrop Hunter for Amazon Now
 
-A client-side bookmarklet and userscript for **Amazon Now** (Tez) on amazon.in. It scans categories and keywords in the background, ranks products by real savings, tracks price drops between scans, and helps you build a smart basket. Works on PC, Mac, Android and iOS.
+Scans Amazon Now by category and keyword, ranks products by real savings, and tracks price changes between scans. It runs in your own browser as a bookmarklet or userscript. Nothing is uploaded and there is no account.
 
-> Runs entirely in your browser using your own Amazon session and delivery location. Nothing is sent to any third party.
+**Live page:** https://stymrj.github.io/Amazon-Now-Deals/
 
----
+## Features
 
-## ✨ Features
+- Ranks by percent off and rupees saved together
+- Labels products that are new or cheaper than your last scan
+- Filters: search, category, brand, maximum price, minimum discount, stock, saved items
+- Shopping list with quantities, total and total savings
+- CSV export and copy-to-share text
+- Grid and list views, light and dark themes, keyboard shortcuts
+- Settings, saved items and price history stay in your browser
 
-- 🎯 **Best-Deal Score**: Ranks by discount **and** rupees saved.
-- ⚡ **Parallel Scanning**: 5 workers, retries, automatic back-off on rate limits (HTTP 429), stop any time.
-- 🗂️ **Categories + Keywords**: Browse nodes plus 35+ keyword searches across 7 groups.
-- 📉 **Price-Drop Tracking**: `NEW` and `PRICE ↓` badges against your previous scan.
-- 🧰 **Smart Filters**: Search, category, brand, max price, min discount, favourites, new-only.
-- 🛒 **Basket**: Quantities, running total, total savings, copy it or open every `amazon.in/dp/…` link.
-- ⬇️ **Export & Share**: CSV download or copy the top 20 deals as text.
-- 🌗 **Modern UI**: Grid or list, dark mode, mobile-friendly, style-isolated with Shadow DOM.
-- 💾 **Remembers You**: Filters, favourites, theme and price history persist locally.
-- 🏷️ **Auto Brand ID**: Detects your Amazon Now brand ID from the page, or paste it manually.
+## Install
 
----
+**Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the button to your bookmarks bar. Open amazon.in and click the bookmark.
 
-## 🚀 Installation & Usage
+**Bookmarklet (mobile).** Copy the code from the page, create a bookmark, and paste the code as its address. Run it from the address bar on amazon.in.
 
-### 💻 Desktop
-1. Run `node build.js`, then open `index.html` (or `python3 -m http.server 8767` and visit `http://localhost:8767`).
-2. Show your bookmarks bar (`Ctrl+Shift+B` / `Cmd+Shift+B`).
-3. Drag the **⚡ PriceDrop Hunter** button onto the bar.
-4. Open [amazon.in/tez/browse/home](https://www.amazon.in/tez/browse/home), click the bookmark, press **Scan deals**.
+**Userscript.** Install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A small Deals button appears on every amazon.in page.
 
-**Userscript:** install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A **⚡ Deals** button appears on every amazon.in page.
+**Demo.** Use "Try the demo" on the install page to explore the interface with sample data.
 
-### 📱 Mobile
-1. Open the installer page and tap **Copy for mobile**.
-2. Create a bookmark, edit it, and paste the script as the URL.
-3. On the Amazon Now page, type the bookmark name in the address bar and pick it.
+## Keyboard shortcuts
 
-### 🎬 Demo
-Click **▶ Try live demo** on the installer page to try the full UI with synthetic data on any site.
+`/` search, `S` scan or stop, `Esc` close.
 
----
+## How it gets data
 
-## 🎮 Controls
+Uses the `tez/browse` JSON endpoints that the Amazon Now pages use, from your logged-in session. The brand ID is detected from the page or entered in the sidebar.
 
-| Control | Description |
-| :--- | :--- |
-| **Category chips** | Choose browse categories and keyword groups to scan. |
-| **Brand ID** | Auto-detected from the Amazon Now page; paste manually if empty. |
-| **Pages per category** | Scan depth (1 to 5, capped by the API at 3 batches). |
-| **⚡ Scan deals / ■ Stop** | Start or stop the scan. |
-| **Min discount / Max price** | Live filters. |
-| **Sort** | Best deal, highest discount, biggest saving ₹, price, name. |
-| **♡ / ✕ / + List** | Favourite, hide, or add to basket. |
-| **Shortcuts** | `/` search · `S` scan or stop · `Esc` close |
+## Limitations
 
----
+- Only three browse node IDs are bundled (Atta & Flours, Rice & Grains, Ice Cream); everything else uses keyword search.
+- Keyword search uses the `searchByKeyword` endpoint, which is not verified in every region.
+- Stock status is not exposed, so every product is treated as available.
 
-## 🧱 Project Structure
+## Project layout
 
 ```
-Amazon-Now-Deals/
-├── src/
-│   ├── deals.js          # The whole app (single IIFE, zero dependencies)
-│   └── index.tpl.html    # Installer page template
-├── dist/                 # Generated by build.js
-├── build.js              # Minify and generate bookmarklet, userscript, installer
-├── index.html            # Generated installer page
-└── README.md
+src/deals.js         the app (one file, no dependencies)
+src/index.tpl.html   install page template
+build.js             builds dist/ and index.html
+favicon.svg
 ```
 
----
-
-## 🛡️ Technical & Privacy Details
-
-- **Data source:** Amazon Now's `tez/browse` JSON endpoints, called from your own logged-in session.
-- **Privacy:** No analytics, no remote calls other than amazon.in. Favourites and price history live in your browser's `localStorage`.
-- **Resilient parsing:** The parser walks the whole response and recognises products by their fields, not fixed paths.
-
-### ⚠️ Known limitations
-- Only three browse node IDs are bundled (Atta & Flours, Rice & Grains, Ice Cream); the rest of the catalogue is covered by keyword search.
-- Keyword search uses the `searchByKeyword` JSON endpoint, which is not verified against every region.
-- Amazon Now endpoints are undocumented and can change without notice.
-- Stock status is not exposed by the API, so every product is treated as available.
+Run `node build.js` after any change.
 
 ---
 
-<p align="center">Made with ❤️ by <a href="https://www.linkedin.com/in/satyamraj1"><b>Satyam Raj</b></a></p>
+Made with ♥ by [Satyam Raj](https://www.linkedin.com/in/satyamraj1)
