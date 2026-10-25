@@ -23,6 +23,10 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 
 ## Install
 
+![Install walkthrough](https://stymrj.github.io/PriceDrop-Hunter/media/install-demo.gif)
+
+[Watch the walkthrough video (MP4)](https://stymrj.github.io/PriceDrop-Hunter/media/install-demo.mp4)
+
 **Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the button to your bookmarks bar. Open amazon.in and click the bookmark.
 
 **Bookmarklet (mobile).** On the install page, tap **Copy mobile loader**. It is a bookmark of about 380 characters that loads the latest version from GitHub Pages, so it fits on any phone. Create a bookmark, paste it as the address, and run it from the address bar on amazon.in. The full bookmarklet (about 45 KB, no network needed) is in `dist/bookmarklet.txt`.
