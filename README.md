@@ -1,4 +1,4 @@
-# ⚡ Amazon Now Deal Radar
+# ⚡ PriceDrop Hunter for Amazon Now
 
 A client-side bookmarklet and userscript for **Amazon Now** (Tez) on amazon.in. It scans categories and keywords in the background, ranks products by real savings, tracks price drops between scans, and helps you build a smart basket. Works on PC, Mac, Android and iOS.
 
@@ -26,7 +26,7 @@ A client-side bookmarklet and userscript for **Amazon Now** (Tez) on amazon.in. 
 ### 💻 Desktop
 1. Run `node build.js`, then open `index.html` (or `python3 -m http.server 8767` and visit `http://localhost:8767`).
 2. Show your bookmarks bar (`Ctrl+Shift+B` / `Cmd+Shift+B`).
-3. Drag the **⚡ Deal Radar** button onto the bar.
+3. Drag the **⚡ PriceDrop Hunter** button onto the bar.
 4. Open [amazon.in/tez/browse/home](https://www.amazon.in/tez/browse/home), click the bookmark, press **Scan deals**.
 
 **Userscript:** install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A **⚡ Deals** button appears on every amazon.in page.

@@ -16,7 +16,7 @@ fs.writeFileSync(path.join(__dirname, 'dist/bookmarklet.txt'), bookmarklet);
 fs.copyFileSync(src, path.join(__dirname, 'dist/deals.js'));
 // Tampermonkey/Violentmonkey build: loads quietly, adds a floating launcher button.
 const header = `// ==UserScript==
-// @name         Amazon Now Deal Radar
+// @name         PriceDrop Hunter for Amazon Now
 // @namespace    amazon-now-deals
 // @version      2.0.0
 // @description  Scan Amazon Now by category and keyword, rank by real savings, and build a smart basket.

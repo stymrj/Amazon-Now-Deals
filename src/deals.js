@@ -1,5 +1,5 @@
 /*!
- * Amazon Now Deal Radar
+ * PriceDrop Hunter for Amazon Now
  * Bookmarklet / userscript for amazon.in. Runs in your own browser session.
  * DEMO mode (synthetic data) is used anywhere else.
  */
@@ -75,7 +75,7 @@
   const P = {
     key: 'anr_v1', tag: 'ANR', hostRe: /(^|\.)amazon\.in$/,
     defaults: { groups: ['staples', 'grocery', 'snacks'], brandId: '', depth: 2 },
-    logo: 'Amazon Now', logoTag: 'DEAL RADAR',
+    logo: 'PriceDrop', logoTag: 'HUNTER',
     colors: ['#146eb4', '#0f5a94', '#ff9900', '#5aa9e6', '#82c0f0'],
     jobs: st => {
       const jobs = [];
