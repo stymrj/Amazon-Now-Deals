@@ -27,8 +27,6 @@ Scans Amazon Now by category and keyword, ranks products by real savings, and tr
 
 **Userscript.** Install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A small Deals button appears on every amazon.in page.
 
-**Demo.** Use "Try the demo" on the install page to explore the interface with sample data.
-
 ## Keyboard shortcuts
 
 `/` search, `S` scan or stop, `Esc` close.
