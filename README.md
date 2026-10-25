@@ -23,7 +23,7 @@ Scans Amazon Now by category and keyword, ranks products by real savings, and tr
 
 **Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the button to your bookmarks bar. Open amazon.in and click the bookmark.
 
-**Bookmarklet (mobile).** Copy the code from the page, create a bookmark, and paste the code as its address. Run it from the address bar on amazon.in.
+**Bookmarklet (mobile).** On the install page, tap **Copy mobile loader**. It is a bookmark of about 380 characters that loads the latest version from GitHub Pages, so it fits on any phone. Create a bookmark, paste it as the address, and run it from the address bar on amazon.in. The full bookmarklet (about 45 KB, no network needed) is in `dist/bookmarklet.txt`.
 
 **Userscript.** Install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A small Deals button appears on every amazon.in page.
 
