@@ -31,7 +31,7 @@ const launcher = `
   window.__ANR__.hide();
   var b=document.createElement('button');
   b.textContent='Deals';
-  b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:2147483646;background:#146eb4;color:#fff;font:600 14px system-ui,sans-serif;border:0;border-radius:8px;padding:11px 16px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer';
+  b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:2147483646;background:#232f3e;color:#fff;font:600 14px system-ui,sans-serif;border:0;border-radius:8px;padding:11px 16px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer';
   b.onclick=function(){window.__ANR__.toggle()};
   document.body.appendChild(b);
 })();
