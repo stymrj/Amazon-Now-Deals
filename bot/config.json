@@ -1,0 +1,183 @@
+{
+  "minDiscount": 60,
+  "pages": 1,
+  "groups": [
+    {
+      "id": "staples",
+      "name": "Grocery & Staples",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "204870009031",
+          "Atta & Flours"
+        ],
+        [
+          "204870014031",
+          "Rice & Grains"
+        ]
+      ]
+    },
+    {
+      "id": "icecream",
+      "name": "Ice Cream Store",
+      "minDiscount": 60,
+      "merch": true,
+      "subs": [
+        [
+          "216450600031",
+          "Ice Cream"
+        ]
+      ]
+    },
+    {
+      "id": "grocery",
+      "name": "Grocery",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "dal",
+          "Dal"
+        ],
+        [
+          "oil",
+          "Oil"
+        ],
+        [
+          "ghee",
+          "Ghee"
+        ],
+        [
+          "sugar",
+          "Sugar"
+        ],
+        [
+          "masala",
+          "Masala"
+        ],
+        [
+          "dry fruits",
+          "Dry fruits"
+        ]
+      ]
+    },
+    {
+      "id": "snacks",
+      "name": "Snacks",
+      "minDiscount": 70,
+      "subs": [
+        [
+          "chips",
+          "Chips"
+        ],
+        [
+          "biscuits",
+          "Biscuits"
+        ],
+        [
+          "namkeen",
+          "Namkeen"
+        ],
+        [
+          "chocolate",
+          "Chocolate"
+        ],
+        [
+          "noodles",
+          "Noodles"
+        ]
+      ]
+    },
+    {
+      "id": "drinks",
+      "name": "Drinks",
+      "minDiscount": 70,
+      "subs": [
+        [
+          "tea",
+          "Tea"
+        ],
+        [
+          "coffee",
+          "Coffee"
+        ],
+        [
+          "juice",
+          "Juice"
+        ],
+        [
+          "cold drink",
+          "Cold drink"
+        ]
+      ]
+    },
+    {
+      "id": "dairy",
+      "name": "Dairy",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "milk",
+          "Milk"
+        ],
+        [
+          "paneer",
+          "Paneer"
+        ],
+        [
+          "butter",
+          "Butter"
+        ],
+        [
+          "cheese",
+          "Cheese"
+        ]
+      ]
+    },
+    {
+      "id": "care",
+      "name": "Personal Care",
+      "minDiscount": 70,
+      "subs": [
+        [
+          "shampoo",
+          "Shampoo"
+        ],
+        [
+          "soap",
+          "Soap"
+        ],
+        [
+          "toothpaste",
+          "Toothpaste"
+        ],
+        [
+          "face wash",
+          "Face wash"
+        ],
+        [
+          "diaper",
+          "Diaper"
+        ]
+      ]
+    },
+    {
+      "id": "home",
+      "name": "Home",
+      "minDiscount": 70,
+      "subs": [
+        [
+          "detergent",
+          "Detergent"
+        ],
+        [
+          "dishwash",
+          "Dishwash"
+        ],
+        [
+          "cleaner",
+          "Cleaner"
+        ]
+      ]
+    }
+  ]
+}
