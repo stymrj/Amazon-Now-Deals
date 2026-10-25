@@ -79,6 +79,8 @@
         if (r.status === 429) { await sleep(4000 * (a + 1)); continue; }
         if (r.status >= 500) throw new Error('HTTP ' + r.status);
         if (!r.ok) { noLoc = true; return []; }
+        // Signed out or no Amazon Now location: Amazon answers 204, or a sign-in page instead of data.
+        if (r.status === 204 || (r.headers.get('content-type') || '').indexOf('json') < 0) { noLoc = true; return []; }
         return extract(await r.json(), job.g.name + ' › ' + job.name);
       } catch (e) { lastErr = e; await sleep(700 * (a + 1)); }
     }
@@ -97,7 +99,7 @@
     },
     fetchPage,
     noLocation: () => noLoc,
-    noLocMsg: 'No results. Open amazon.in/tez/browse/home first (so your location and brand ID are set), then scan again.',
+    noLocMsg: 'No results. Sign in to Amazon, open amazon.in/tez/browse/home so your Amazon Now address and brand ID are set, then scan again.',
     locCheck: () => brandId() ? true : null,
     locUI: (st, e) => `<label class="row" style="margin-bottom:8px"><span>Brand ID</span><input class="fld" style="width:150px" data-in="brandId" placeholder="auto-detect" value="${e(st.brandId)}"></label>`,
     locInput: (k, v) => { if (k === 'brandId') { store.brandId = v.trim().slice(0, 64); save(); return true; } return false; }

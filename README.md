@@ -1,11 +1,13 @@
 # PriceDrop Hunter for Amazon Now
 
-Scans Amazon Now by category and keyword, ranks products by real savings, and tracks price changes between scans. It runs in your own browser as a bookmarklet or userscript. Nothing is uploaded and there is no account.
+Scans Amazon Now by category and keyword and opens with the biggest discounts, then the best deals of each group. It runs in your own browser as a bookmarklet or userscript. Nothing is uploaded and there is no account.
 
 **Live page:** https://stymrj.github.io/Amazon-Now-Deals/
 
 ## Features
 
+- Opens with the biggest discounts, across every category, scanned by itself
+- Best deals of each category in one swipeable row, with See all
 - Ranks by percent off and rupees saved together
 - Labels products that are new, cheaper than last time, or at their lowest price ever
 - Price history sparkline on every product you have seen before
@@ -150,12 +152,12 @@ A session cookie works like your password for that site. Keep it only in GitHub 
 
 ## How it gets data
 
-Uses the `tez/browse` JSON endpoints that the Amazon Now pages use, from your logged-in session. The brand ID is detected from the page or entered in the sidebar.
+Uses the `tez/browse` JSON endpoints the Amazon Now pages use, from your signed-in tab. The brand ID is detected from the page or entered in the menu.
 
 ## Limitations
 
-- Only three browse node IDs are bundled (Atta & Flours, Rice & Grains, Ice Cream); everything else uses keyword search.
-- Keyword search uses the `searchByKeyword` endpoint, which is not verified in every region.
+- You must be signed in to Amazon with an Amazon Now address; otherwise Amazon returns no data and Hunter tells you so.
+- Three browse categories are bundled (Atta & Flours, Rice & Grains, Ice Cream); everything else uses keyword search.
 - Stock status is not exposed, so every product is treated as available.
 
 ## Project layout
