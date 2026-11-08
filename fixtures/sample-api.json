@@ -1,0 +1,1106 @@
+{
+  "data": {
+    "widgets": [
+      {
+        "data": {
+          "products": [
+            {
+              "asin": "B0FIX00000",
+              "title": "Diwali Test Product 1 1 kg",
+              "buyingPrice": "99",
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img0.jpg"
+              },
+              "packSize": "Pack of 10"
+            },
+            {
+              "asin": "B0FIX00001",
+              "title": "Diwali Test Product 2 1 kg",
+              "buyingPrice": {
+                "amount": 100
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img1.jpg"
+              },
+              "listPrice": {
+                "amount": 330
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00002",
+              "title": "Diwali Test Product 3 1 kg",
+              "buyingPrice": {
+                "amount": 101
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img2.jpg"
+              },
+              "listPrice": {
+                "amount": 331
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00003",
+              "title": "Diwali Test Product 4 1 kg",
+              "buyingPrice": {
+                "amount": 102
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img3.jpg"
+              },
+              "listPrice": {
+                "amount": 332
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00004",
+              "title": "Diwali Test Product 5 1 kg",
+              "buyingPrice": {
+                "amount": 103
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img4.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 333
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00005",
+              "title": "Diwali Test Product 6 1 kg",
+              "buyingPrice": "104",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img5.jpg"
+              },
+              "listPrice": {
+                "amount": 334
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00006",
+              "title": "Diwali Test Product 7 1 kg",
+              "buyingPrice": {
+                "amount": 105
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img6.jpg"
+              },
+              "listPrice": {
+                "amount": 335
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00007",
+              "title": "Diwali Test Product 8 1 kg",
+              "buyingPrice": {
+                "amount": 106
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img7.jpg"
+              },
+              "listPrice": {
+                "amount": 336
+              }
+            },
+            {
+              "asin": "B0FIX00008",
+              "title": "Diwali Test Product 9 1 kg",
+              "buyingPrice": {
+                "amount": 107
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img8.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 337
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00009",
+              "title": "Diwali Test Product 10 1 kg",
+              "buyingPrice": {
+                "amount": 108
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img9.jpg"
+              },
+              "listPrice": {
+                "amount": 338
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00010",
+              "title": "Diwali Test Product 11 1 kg",
+              "buyingPrice": "109",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img10.jpg"
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00011",
+              "title": "Diwali Test Product 12 1 kg",
+              "buyingPrice": {
+                "amount": 110
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img11.jpg"
+              },
+              "listPrice": {
+                "amount": 340
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00012",
+              "title": "Diwali Test Product 13 1 kg",
+              "buyingPrice": {
+                "amount": 111
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img12.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 341
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00013",
+              "title": "Diwali Test Product 14 1 kg",
+              "buyingPrice": {
+                "amount": 112
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img13.jpg"
+              },
+              "listPrice": {
+                "amount": 342
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00014",
+              "title": "Diwali Test Product 15 1 kg",
+              "buyingPrice": {
+                "amount": 113
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img14.jpg"
+              },
+              "listPrice": {
+                "amount": 343
+              }
+            },
+            {
+              "asin": "B0FIX00015",
+              "title": "Diwali Test Product 16 1 kg",
+              "buyingPrice": "114",
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img15.jpg"
+              },
+              "listPrice": {
+                "amount": 344
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00016",
+              "title": "Diwali Test Product 17 1 kg",
+              "buyingPrice": {
+                "amount": 115
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img16.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 345
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00017",
+              "title": "Diwali Test Product 18 1 kg",
+              "buyingPrice": {
+                "amount": 116
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img17.jpg"
+              },
+              "listPrice": {
+                "amount": 346
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00018",
+              "title": "Diwali Test Product 19 1 kg",
+              "buyingPrice": {
+                "amount": 117
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img18.jpg"
+              },
+              "listPrice": {
+                "amount": 347
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00019",
+              "title": "Diwali Test Product 20 1 kg",
+              "buyingPrice": {
+                "amount": 118
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img19.jpg"
+              },
+              "listPrice": {
+                "amount": 348
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00020",
+              "title": "Diwali Test Product 21 1 kg",
+              "buyingPrice": "119",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img20.jpg"
+              },
+              "packSize": "Pack of 10",
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00021",
+              "title": "Diwali Test Product 22 1 kg",
+              "buyingPrice": {
+                "amount": 120
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img21.jpg"
+              },
+              "listPrice": {
+                "amount": 350
+              }
+            },
+            {
+              "asin": "B0FIX00022",
+              "title": "Diwali Test Product 23 1 kg",
+              "buyingPrice": {
+                "amount": 121
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img22.jpg"
+              },
+              "listPrice": {
+                "amount": 351
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00023",
+              "title": "Diwali Test Product 24 1 kg",
+              "buyingPrice": {
+                "amount": 122
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img23.jpg"
+              },
+              "listPrice": {
+                "amount": 352
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00024",
+              "title": "Diwali Test Product 25 1 kg",
+              "buyingPrice": {
+                "amount": 123
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img24.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 353
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00025",
+              "title": "Diwali Test Product 26 1 kg",
+              "buyingPrice": "124",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img25.jpg"
+              },
+              "listPrice": {
+                "amount": 354
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00026",
+              "title": "Diwali Test Product 27 1 kg",
+              "buyingPrice": {
+                "amount": 125
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img26.jpg"
+              },
+              "listPrice": {
+                "amount": 355
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00027",
+              "title": "Diwali Test Product 28 1 kg",
+              "buyingPrice": {
+                "amount": 126
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img27.jpg"
+              },
+              "listPrice": {
+                "amount": 356
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00028",
+              "title": "Diwali Test Product 29 1 kg",
+              "buyingPrice": {
+                "amount": 127
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img28.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 357
+              }
+            },
+            {
+              "asin": "B0FIX00029",
+              "title": "Diwali Test Product 30 1 kg",
+              "buyingPrice": {
+                "amount": 128
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img29.jpg"
+              },
+              "listPrice": {
+                "amount": 358
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00030",
+              "title": "Diwali Test Product 31 1 kg",
+              "buyingPrice": "129",
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img30.jpg"
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00031",
+              "title": "Diwali Test Product 32 1 kg",
+              "buyingPrice": {
+                "amount": 130
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img31.jpg"
+              },
+              "listPrice": {
+                "amount": 360
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00032",
+              "title": "Diwali Test Product 33 1 kg",
+              "buyingPrice": {
+                "amount": 131
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img32.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 361
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00033",
+              "title": "Diwali Test Product 34 1 kg",
+              "buyingPrice": {
+                "amount": 132
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img33.jpg"
+              },
+              "listPrice": {
+                "amount": 362
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00034",
+              "title": "Diwali Test Product 35 1 kg",
+              "buyingPrice": {
+                "amount": 133
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img34.jpg"
+              },
+              "listPrice": {
+                "amount": 363
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00035",
+              "title": "Diwali Test Product 36 1 kg",
+              "buyingPrice": "134",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img35.jpg"
+              },
+              "listPrice": {
+                "amount": 364
+              }
+            },
+            {
+              "asin": "B0FIX00036",
+              "title": "Diwali Test Product 37 1 kg",
+              "buyingPrice": {
+                "amount": 135
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img36.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 365
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00037",
+              "title": "Diwali Test Product 38 1 kg",
+              "buyingPrice": {
+                "amount": 136
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img37.jpg"
+              },
+              "listPrice": {
+                "amount": 366
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00038",
+              "title": "Diwali Test Product 39 1 kg",
+              "buyingPrice": {
+                "amount": 137
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img38.jpg"
+              },
+              "listPrice": {
+                "amount": 367
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00039",
+              "title": "Diwali Test Product 40 1 kg",
+              "buyingPrice": {
+                "amount": 138
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img39.jpg"
+              },
+              "listPrice": {
+                "amount": 368
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00040",
+              "title": "Diwali Test Product 41 1 kg",
+              "buyingPrice": "139",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img40.jpg"
+              },
+              "packSize": "Pack of 10",
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00041",
+              "title": "Diwali Test Product 42 1 kg",
+              "buyingPrice": {
+                "amount": 140
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img41.jpg"
+              },
+              "listPrice": {
+                "amount": 370
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00042",
+              "title": "Diwali Test Product 43 1 kg",
+              "buyingPrice": {
+                "amount": 141
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img42.jpg"
+              },
+              "listPrice": {
+                "amount": 371
+              }
+            },
+            {
+              "asin": "B0FIX00043",
+              "title": "Diwali Test Product 44 1 kg",
+              "buyingPrice": {
+                "amount": 142
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img43.jpg"
+              },
+              "listPrice": {
+                "amount": 372
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00044",
+              "title": "Diwali Test Product 45 1 kg",
+              "buyingPrice": {
+                "amount": 143
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img44.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 373
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00045",
+              "title": "Diwali Test Product 46 1 kg",
+              "buyingPrice": "144",
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img45.jpg"
+              },
+              "listPrice": {
+                "amount": 374
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00046",
+              "title": "Diwali Test Product 47 1 kg",
+              "buyingPrice": {
+                "amount": 145
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img46.jpg"
+              },
+              "listPrice": {
+                "amount": 375
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00047",
+              "title": "Diwali Test Product 48 1 kg",
+              "buyingPrice": {
+                "amount": 146
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img47.jpg"
+              },
+              "listPrice": {
+                "amount": 376
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00048",
+              "title": "Diwali Test Product 49 1 kg",
+              "buyingPrice": {
+                "amount": 147
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img48.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 377
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00049",
+              "title": "Diwali Test Product 50 1 kg",
+              "buyingPrice": {
+                "amount": 148
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img49.jpg"
+              },
+              "listPrice": {
+                "amount": 378
+              }
+            },
+            {
+              "asin": "B0FIX00050",
+              "title": "Diwali Test Product 51 1 kg",
+              "buyingPrice": "149",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img50.jpg"
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00051",
+              "title": "Diwali Test Product 52 1 kg",
+              "buyingPrice": {
+                "amount": 150
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img51.jpg"
+              },
+              "listPrice": {
+                "amount": 380
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00052",
+              "title": "Diwali Test Product 53 1 kg",
+              "buyingPrice": {
+                "amount": 151
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img52.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 381
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00053",
+              "title": "Diwali Test Product 54 1 kg",
+              "buyingPrice": {
+                "amount": 152
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img53.jpg"
+              },
+              "listPrice": {
+                "amount": 382
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00054",
+              "title": "Diwali Test Product 55 1 kg",
+              "buyingPrice": {
+                "amount": 153
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img54.jpg"
+              },
+              "listPrice": {
+                "amount": 383
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00055",
+              "title": "Diwali Test Product 56 1 kg",
+              "buyingPrice": "154",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img55.jpg"
+              },
+              "listPrice": {
+                "amount": 384
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00056",
+              "title": "Diwali Test Product 57 1 kg",
+              "buyingPrice": {
+                "amount": 155
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img56.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 385
+              }
+            },
+            {
+              "asin": "B0FIX00057",
+              "title": "Diwali Test Product 58 1 kg",
+              "buyingPrice": {
+                "amount": 156
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img57.jpg"
+              },
+              "listPrice": {
+                "amount": 386
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00058",
+              "title": "Diwali Test Product 59 1 kg",
+              "buyingPrice": {
+                "amount": 157
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img58.jpg"
+              },
+              "listPrice": {
+                "amount": 387
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00059",
+              "title": "Diwali Test Product 60 1 kg",
+              "buyingPrice": {
+                "amount": 158
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img59.jpg"
+              },
+              "listPrice": {
+                "amount": 388
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00060",
+              "title": "Diwali Test Product 61 1 kg",
+              "buyingPrice": "159",
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img60.jpg"
+              },
+              "packSize": "Pack of 10",
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00061",
+              "title": "Diwali Test Product 62 1 kg",
+              "buyingPrice": {
+                "amount": 160
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img61.jpg"
+              },
+              "listPrice": {
+                "amount": 390
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00062",
+              "title": "Diwali Test Product 63 1 kg",
+              "buyingPrice": {
+                "amount": 161
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img62.jpg"
+              },
+              "listPrice": {
+                "amount": 391
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00063",
+              "title": "Diwali Test Product 64 1 kg",
+              "buyingPrice": {
+                "amount": 162
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img63.jpg"
+              },
+              "listPrice": {
+                "amount": 392
+              }
+            },
+            {
+              "asin": "B0FIX00064",
+              "title": "Diwali Test Product 65 1 kg",
+              "buyingPrice": {
+                "amount": 163
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img64.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 393
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00065",
+              "title": "Diwali Test Product 66 1 kg",
+              "buyingPrice": "164",
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img65.jpg"
+              },
+              "listPrice": {
+                "amount": 394
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00066",
+              "title": "Diwali Test Product 67 1 kg",
+              "buyingPrice": {
+                "amount": 165
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img66.jpg"
+              },
+              "listPrice": {
+                "amount": 395
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00067",
+              "title": "Diwali Test Product 68 1 kg",
+              "buyingPrice": {
+                "amount": 166
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img67.jpg"
+              },
+              "listPrice": {
+                "amount": 396
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00068",
+              "title": "Diwali Test Product 69 1 kg",
+              "buyingPrice": {
+                "amount": 167
+              },
+              "heroImage": {
+                "mediumResImageUrl": "https://example.com/img68.jpg"
+              },
+              "packSize": "Pack of 10",
+              "listPrice": {
+                "amount": 397
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "asin": "B0FIX00069",
+              "title": "Diwali Test Product 70 1 kg",
+              "buyingPrice": {
+                "amount": 168
+              },
+              "heroImage": {
+                "lowResImageUrl": "https://example.com/img69.jpg"
+              },
+              "listPrice": {
+                "amount": 398
+              },
+              "savings": {
+                "percentage": 70
+              }
+            },
+            {
+              "title": "No ASIN",
+              "buyingPrice": {
+                "amount": 10
+              },
+              "listPrice": {
+                "amount": 20
+              }
+            },
+            {
+              "asin": "B0BAD00001",
+              "buyingPrice": {
+                "amount": 10
+              },
+              "listPrice": {
+                "amount": 20
+              }
+            },
+            {
+              "asin": "B0BAD00002",
+              "title": "No price",
+              "listPrice": {
+                "amount": 20
+              }
+            },
+            {},
+            {
+              "asin": "B0BAD00003",
+              "title": "Null price",
+              "buyingPrice": null
+            }
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "hasMoreWidgets": true,
+      "nextOffset": 10
+    }
+  }
+}

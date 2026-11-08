@@ -26,7 +26,7 @@ module.exports = {
   label: 'Amazon Now',
   required: ['AMAZON_COOKIE', 'AMAZON_BRAND_ID'],
   workers: 3,
-  pageSize: 8,
+  pageSize: 10,
   async fetchPage(job, page, ctx) {
     const { env, fetch, sleep } = ctx;
     const offset = (page - 1) * 10;
@@ -43,7 +43,12 @@ module.exports = {
       if (!r.ok) return [];
       const ct = r.headers.get('content-type') || '';
       if (ct.indexOf('json') < 0) throw Object.assign(new Error('Amazon returned a web page instead of data (signed out or a robot check). Refresh AMAZON_COOKIE.'), { blocked: true });
-      return extract(await r.json(), job.g.name + ' › ' + job.sub[1], ctx);
+      const data = await r.json();
+      const items = extract(data, job.g.name + ' › ' + job.sub[1], ctx);
+      // tez/browse paging lives in data.metadata: hasMoreWidgets / nextOffset.
+      const meta = data && data.data && data.data.metadata;
+      items.more = meta && meta.hasMoreWidgets !== undefined ? !!meta.hasMoreWidgets : items.length >= 10;
+      return items;
     }
     throw new Error('rate limited');
   }

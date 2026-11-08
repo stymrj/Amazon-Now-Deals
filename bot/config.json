@@ -178,6 +178,82 @@
           "Cleaner"
         ]
       ]
+    },
+    {
+      "id": "cat-dairy",
+      "name": "Dairy, Bread & Eggs",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "204870018031",
+          "Fresh Milk"
+        ],
+        [
+          "204870006031",
+          "Curd & Yogurt"
+        ],
+        [
+          "204870015031",
+          "Cheese & Butter"
+        ]
+      ]
+    },
+    {
+      "id": "cat-snacks",
+      "name": "Snacks, Sweets & Treats",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "204924526031",
+          "Chocolates"
+        ],
+        [
+          "204924530031",
+          "Chips & Crisps"
+        ],
+        [
+          "215540425031",
+          "Indian Namkeen"
+        ]
+      ]
+    },
+    {
+      "id": "cat-drinks",
+      "name": "Beverages & Drinks",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "204924556031",
+          "Cold Drinks & Sodas"
+        ],
+        [
+          "204924559031",
+          "Tea (Leaf & Bags)"
+        ],
+        [
+          "204924558031",
+          "Coffee (Instant & Filter)"
+        ]
+      ]
+    },
+    {
+      "id": "cat-home",
+      "name": "Home Care & Cleaning",
+      "minDiscount": 60,
+      "subs": [
+        [
+          "204952379031",
+          "Liquid Detergent (Matic)"
+        ],
+        [
+          "204924564031",
+          "Dishwash Gels & Bars"
+        ],
+        [
+          "204952368031",
+          "Floor Cleaners (Lizol)"
+        ]
+      ]
     }
   ]
 }

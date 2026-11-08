@@ -1,8 +1,23 @@
-# PriceDrop Hunter for Amazon Now
+# PriceDrop Hunter for Amazon Now — v2
 
 Scans the Amazon Now categories and keywords you pick and shows the biggest discounts, then the best deals of each group. It runs in your own browser as a bookmarklet or userscript. Nothing is uploaded and there is no account.
 
 **Live page:** https://stymrj.github.io/Amazon-Now-Deals/
+
+## What's new in v2 (2026-11-08)
+
+- **Full catalogue:** 12 browse groups, 98 subcategories (Grocery & Staples, Dairy, Snacks & Sweets, Beverages, Ice Cream, Personal Care, Oral Care & Health, Home Care, Kitchen & Home, Fresh Produce, Baby Care, Paan Corner) plus 7 keyword groups — up from 3 browse aisles. Only the Ice Cream Store node uses the `merch` endpoint; the rest use `category`.
+- **Blank-results fix:** a scan that fetches nothing now says why instead of showing an empty grid — signed out / no Brand ID, robot check, Amazon 503 rush-hour page, or rate limit. The empty state shows how many products the last scan fetched and the exact fetch problem.
+- **Second fetch shape:** when the `tez/browse` JSON endpoint returns nothing for a keyword, the scan retries once against the Amazon Now global search page (`/s?i=amazontez`) and parses its product cards (relaxed `div[data-asin]` selector, sponsored cards skipped).
+- **Better Brand ID detection:** session storage, URL params, page links carrying `brandId`/`qcbrand`/`almBrandId`, `a-state` scripts, and page HTML — so the scan works without pasting the ID by hand.
+- **Smarter paging:** reads `data.metadata.hasMoreWidgets` / `nextOffset` from `tez/browse` instead of guessing, scans 2 pages per category by default (up to 5 in the picker), and follows up to 5 pages of results (offset 0–50).
+- **In-browser self-test:** a Self-test button in the sidebar runs the parser, the `/s` fallback and the error messages over built-in fixtures and reports pass/fail. Same checks run in `node test-results-tab.js`.
+- **JSON export** alongside CSV; CSV building is now a shared helper covered by the test.
+- **Bot:** `bot/platform.js` now reports paging from `data.metadata` (page size corrected to 10) and `bot/config.json` adds Dairy, Snacks, Beverages and Home Care groups. Audit helpers in `scripts/` (`audit-category-pages.js`, `audit-bracket-pages.js`) check per-category item counts and 70%-off deals per price bracket.
+
+## Why v2 is stronger
+
+The browser tool already had what a plain deal list doesn't, and v2 keeps all of it: price history with a sparkline on every product you've seen, lowest-ever and price-drop labels, saved-item tracking with per-item drop alerts, a cross-category best-deals row, unit price (per kg / litre / piece) with a value sort, one-tap presets, a shopping list with totals, CSV/JSON export, and light/dark themes. On top of that, v2 adds the reliability layer a deal finder needs most: two fetch shapes with a fallback, retries with backoff on 429/503, real paging signals instead of guessed offsets, and diagnostics that name the cause of zero results. The Telegram bot dedupes by product and keeps a 30-day price history (`data/state.json`), so it sends new deals, price drops and restocks — not the same list every run.
 
 ## Features
 
@@ -14,10 +29,10 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 - Saved items strip showing how much each one dropped since you saved it
 - Unit price (per kg, litre or piece) with a value sort
 - One-tap presets: under ₹99, 50% off, save ₹100+, price drops, lowest ever, best value
-- A setup checklist on first open
+- A setup checklist on first open, plus a scan-status line when a scan fetched nothing
 - Filters: search, category, brand, maximum price, minimum discount, stock, saved items
 - Shopping list with quantities, total and total savings
-- CSV export and copy-to-share text
+- CSV and JSON export, copy-to-share text
 - Grid and list views, light and dark themes, keyboard shortcuts
 - Settings, saved items and price history stay in your browser
 
@@ -29,15 +44,17 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 
 **Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the button to your bookmarks bar. Open amazon.in and click the bookmark.
 
-**Bookmarklet (mobile).** On the install page, tap **Copy mobile loader**. It is a bookmark of about 380 characters that loads the latest version from GitHub Pages, so it fits on any phone. Create a bookmark, paste it as the address, and run it from the address bar on amazon.in. The full bookmarklet (about 45 KB, no network needed) is in `dist/bookmarklet.txt`.
+**Bookmarklet (mobile).** On the install page, tap **Copy mobile loader**. It is a bookmark of about 380 characters that loads the latest version from GitHub Pages, so it fits on any phone. Create a bookmark, paste it as the address, and run it from the address bar on amazon.in. The full bookmarklet (about 65 KB, no network needed) is in `dist/bookmarklet.txt`.
 
 **Userscript.** Install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A small Deals button appears on every amazon.in page.
 
-## Keyboard shortcuts
+## Use
 
-`/` search, `S` scan or stop, `Esc` close.
+Pick categories in the picker, press Scan, and watch deals arrive — up to 4 categories fetch in parallel with a progress bar. Items are deduped across pages and categories. Press **Self-test** in the sidebar any time to check the parser without scanning.
 
-## Telegram alerts
+Keyboard shortcuts: `/` search, `S` scan or stop, `Esc` close.
+
+## Telegram alerts (browser)
 
 Hunter can send new deals, price drops and cheaper saved items to your Telegram.
 
@@ -50,132 +67,67 @@ Each deal is sent once, and again only if its price drops further. Use the users
 
 ## Telegram bot (GitHub Actions)
 
-Hunter can also run on its own, without a browser, on GitHub Actions. Every 30 minutes it scans Amazon Now, compares with the previous run, and sends what changed to Telegram.
+Hunter can also run on its own, without a browser, on GitHub Actions. Every 30 minutes it scans Amazon Now, compares with the previous run (kept in `data/state.json`), and sends what changed to Telegram: a morning catalogue, new deals, price drops, and back-in-stock items. Identical prices are not re-sent.
 
-| | Browser tool | Telegram bot |
-| :--- | :--- | :--- |
-| Runs | In your browser tab | On GitHub Actions (free for public repos) |
-| When | Each time you press Scan and pick categories | Every 30 minutes, 08:31 to 00:01 IST |
-| Uses | Your open Amazon Now session | A copy of your session stored as a GitHub secret |
-| Alerts | New deals, price drops, saved items | New deals, price drops, back in stock, a morning catalogue |
+1. Fork [github.com/stymrj/Amazon-Now-Deals](https://github.com/stymrj/Amazon-Now-Deals).
+2. Create a bot with `@BotFather` (`TELEGRAM_BOT_TOKEN`) and get your chat ID from `@userinfobot` (`TELEGRAM_CHAT_ID`).
+3. On amazon.in/tez/browse/home while logged in, copy the Cookie header from DevTools → Network (`AMAZON_COOKIE`) and the `brandId` from a `tez/browse` request URL (`AMAZON_BRAND_ID`). Hunter's sidebar also shows the Brand ID.
+4. In your fork, add those four as **Secrets**, and set the **Variable** `BOT_ENABLED` = `true`.
+5. In **Actions**, enable workflows, run **Telegram deal alerts** with **Print the messages instead of sending them** ticked to preview, then run it again for real.
 
-### What gets sent
+Optional variables: `MIN_DISCOUNT`, `THRESHOLDS` (e.g. `staples=55,icecream=55`), `GROUPS`, `PAGES` (1–5), `DIGEST_HOUR_IST`, `RUNNER` (`self-hosted` if GitHub's IPs get blocked). Groups and thresholds live in `bot/config.json`.
 
-- **Morning catalogue:** the first run after 9 AM IST sends every deal above your threshold.
-- **New deals:** products seen for the first time that meet the threshold.
-- **Price drops:** products that are cheaper than the last run.
-- **Back in stock:** qualifying products that were out of stock last run.
-- **Nothing else:** identical prices are not re-sent, and if nothing changed the bot stays silent.
+Local run: `cp .env.example .env`, then `node bot/run.js --dry-run` (prints, sends nothing) or `node bot/run.js`. Node 18+, no `npm install` needed.
 
-### Step 1: Copy the repository
-
-Click **Fork** at the top of [github.com/stymrj/Amazon-Now-Deals](https://github.com/stymrj/Amazon-Now-Deals). Everything below happens in your fork.
-
-### Step 2: Create your Telegram bot
-
-1. In Telegram, open `@BotFather`, send `/newbot`, and follow the prompts. Copy the token it gives you. This is `TELEGRAM_BOT_TOKEN`.
-2. Open your new bot and press **Start**.
-3. Open `@userinfobot` and press **Start**. Copy the number it shows. This is `TELEGRAM_CHAT_ID`.
-
-To post into a channel instead, add the bot to the channel as an admin and use the channel's `@username` as `TELEGRAM_CHAT_ID`.
-
-### Step 3: Copy your Amazon session and brand ID
-
-1. On a computer, open [amazon.in/tez/browse/home](https://www.amazon.in/tez/browse/home) while logged in, with your address set.
-2. Press `F12`, open the **Network** tab, and reload. Click any request to `www.amazon.in`, find **Request Headers → cookie**, and copy the whole value. This is `AMAZON_COOKIE`.
-3. In the Network tab, type `tez/browse` in the filter box and click a request. The URL contains `brandId=...`: that value is `AMAZON_BRAND_ID`. Hunter's sidebar also shows it under **Brand ID** when you open it on the Amazon Now page.
-
-Cookies expire after a while. When the bot reports that Amazon refused the session, copy a fresh one.
-
-### Step 4: Add the secrets
-
-In your fork, open **Settings → Secrets and variables → Actions → Secrets** and add:
-
-| Secret | Required | What it is |
-| :--- | :---: | :--- |
-| `TELEGRAM_BOT_TOKEN` | Yes | Token from @BotFather |
-| `TELEGRAM_CHAT_ID` | Yes | Your chat ID from @userinfobot, or a channel `@username` |
-| `AMAZON_COOKIE` | Yes | The Cookie header from a logged-in amazon.in tab on the Amazon Now page. |
-| `AMAZON_BRAND_ID` | Yes | Your Amazon Now brand ID (see step 3). |
-
-Then open the **Variables** tab and add `BOT_ENABLED` = `true`. Scheduled runs only start once this is set.
-
-Optional variables:
-
-| Variable | Default | What it does |
-| :--- | :--- | :--- |
-| `MIN_DISCOUNT` | per group | One threshold for every group, for example `65` |
-| `THRESHOLDS` | see `bot/config.json` | Per-group thresholds, for example `staples=55,icecream=55` |
-| `GROUPS` | all | Only scan these groups, for example `staples,icecream` |
-| `PAGES` | `1` | Pages per aisle, 1 to 5 |
-| `DIGEST_HOUR_IST` | `9` | Hour of the morning catalogue; `-1` turns it off |
-| `RUNNER` | `ubuntu-latest` | Set to `self-hosted` to run on your own computer |
-
-### Step 5: Enable and test
-
-1. Open the **Actions** tab. GitHub pauses workflows in new forks: click **I understand my workflows, go ahead and enable them**.
-2. Choose **Telegram deal alerts** → **Run workflow**, tick **Print the messages instead of sending them**, and run it. Open the run to see what would be sent.
-3. Run it again without the tick. Your first alert arrives on Telegram within a minute or two.
-
-From then on it runs every 30 minutes by itself. GitHub sometimes starts scheduled runs late, and it pauses schedules in repositories with no activity for 60 days; re-enable them from the Actions tab if that happens.
-
-### Step 6 (if blocked): run it on your own computer
-
-GitHub's servers share IP addresses that some shops block. A self-hosted runner runs the same workflow on your computer, from your home connection.
-
-1. In your repository: **Settings → Actions → Runners → New self-hosted runner**, choose your OS, and run the commands it shows.
-2. In **Settings → Secrets and variables → Actions → Variables**, add `RUNNER` = `self-hosted`.
-3. Keep that computer on (and the runner running) during the hours you want alerts.
-
-Node 18 or newer must be installed on that computer.
-
-### Customising
-
-Groups, aisles and default thresholds live in `bot/config.json`:
-
-```json
-{ "id": "staples", "name": "Grocery & Staples", "minDiscount": 60, "subs": [["204870009031", "Atta & Flours"]] }
-```
-
-Add or remove entries under `subs`, change `minDiscount`, commit, and the next run uses them.
-
-### Run it on your computer
-
-```bash
-cp .env.example .env        # fill in the values from steps 2 and 3
-node bot/run.js --dry-run   # prints the messages, sends nothing
-node bot/run.js             # sends to Telegram and remembers this run in data/state.json
-```
-
-Node 18 or newer, no `npm install` needed.
-
-### Keep your session safe
-
-A session cookie works like your password for that site. Keep it only in GitHub **Secrets** or your local `.env` (already in `.gitignore`), never in a commit or an issue. GitHub hides secrets in run logs. If one ever leaks, log out of all devices on Amazon Now to cancel it.
+A session cookie works like your password for that site. Keep it only in GitHub **Secrets** or your local `.env` (already in `.gitignore`), never in a commit or an issue. If one ever leaks, log out of all devices on Amazon to cancel it. Cookies expire; when the bot reports that Amazon refused the session, copy a fresh one.
 
 ## How it gets data
 
-Uses the `tez/browse` JSON endpoints the Amazon Now pages use, from your signed-in tab. The brand ID is detected from the page or entered in the menu.
+Uses the `tez/browse` JSON endpoints the Amazon Now pages use (`category` / `merch` / `searchByKeyword`, with your Brand ID and session), from your signed-in tab — plus the `/s?i=amazontez` search page as a fallback when the JSON endpoint returns nothing for a keyword. Requests retry with backoff on HTTP 429/503.
+
+## Troubleshooting
+
+- **Blank results / "0 products":** read the message under the checklist — it names the cause. Sign in to Amazon, open amazon.in/tez/browse/home so your Amazon Now address and Brand ID are set, then scan again.
+- **Robot check / 503:** Amazon showed a check or a rush-hour error page. Open amazon.in normally, complete any check, wait a few minutes, and retry. This is Amazon throttling, not an empty deal list.
+- **Only some categories empty:** that aisle may genuinely have no deals at your minimum discount — lower it, or pick fewer categories for a faster scan (98 aisles × 2 pages takes a while).
+- **Telegram test fails in the bookmarklet:** install the userscript; some shops block bookmarklets from calling Telegram.
+
+## Testing
+
+```bash
+node --check src/deals.js bot/platform.js bot/core.js   # syntax
+node test-results-tab.js                                # 24 checks: 70-item fixture -> 70 cards, /s fallback, retries, diagnostics, CSV, unit price
+node test/bot-platform.test.js                          # 8 checks: bot fetch layer with stubbed fetch
+node build.js                                           # rebuilds dist/ and index.html
+```
+
+The browser tests use fixtures, not the live site: the parser, fallback, cutoff and error paths are verified offline. Live Amazon Now endpoints still need a manual browser test — sign in, scan a keyword, and confirm cards appear.
 
 ## Limitations
 
 - You must be signed in to Amazon with an Amazon Now address; otherwise Amazon returns no data and Hunter tells you so.
-- Three browse categories are bundled (Atta & Flours, Rice & Grains, Ice Cream); everything else uses keyword search.
 - Stock status is not exposed, so every product is treated as available.
+- The endpoints are undocumented and can change.
 
 ## Project layout
 
 ```
 src/deals.js         the app (one file, no dependencies)
 src/index.tpl.html   install page template
+scripts/             category + price-bracket audit helpers (run on amazon.in)
+fixtures/            sample tez payload used by the regression test
+test/                bot platform test (stubbed fetch)
 bot/                 Telegram bot: run.js, core.js, platform.js, config.json
 .github/workflows/   telegram-bot.yml (every 30 minutes)
 .env.example         settings for local runs
 build.js             builds dist/ and index.html
-favicon.svg
 ```
 
 Run `node build.js` after any change.
+
+## License
+
+MIT — see `LICENSE`. The fetch layer adapts MIT-licensed code; the original copyright notice is preserved in `LICENSE`.
 
 ---
 
