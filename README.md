@@ -14,6 +14,7 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 - **In-browser self-test:** a Self-test button in the sidebar runs the parser, the `/s` fallback and the error messages over built-in fixtures and reports pass/fail. Same checks run in `node test-results-tab.js`.
 - **JSON export** alongside CSV; CSV building is now a shared helper covered by the test.
 - **Bot:** `bot/platform.js` now reports paging from `data.metadata` (page size corrected to 10) and `bot/config.json` adds Dairy, Snacks, Beverages and Home Care groups. Audit helpers in `scripts/` (`audit-category-pages.js`, `audit-bracket-pages.js`) check per-category item counts and 70%-off deals per price bracket.
+- **Bookmark name fixed:** the install button now reads **Amazon Now Deals** instead of the generic “PriceDrop Hunter”, so the bookmark you drag to your bookmarks bar is named after this store.
 
 ## Why v2 is stronger
 
@@ -42,9 +43,9 @@ The browser tool already had what a plain deal list doesn't, and v2 keeps all of
 
 [Watch the walkthrough video (MP4)](https://stymrj.github.io/PriceDrop-Hunter/media/install-demo.mp4)
 
-**Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the button to your bookmarks bar. Open amazon.in and click the bookmark.
+**Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the **Amazon Now Deals** button to your bookmarks bar. Open amazon.in and click the bookmark.
 
-**Bookmarklet (mobile).** On the install page, tap **Copy mobile loader**. It is a bookmark of about 380 characters that loads the latest version from GitHub Pages, so it fits on any phone. Create a bookmark, paste it as the address, and run it from the address bar on amazon.in. The full bookmarklet (about 65 KB, no network needed) is in `dist/bookmarklet.txt`.
+**Bookmarklet (mobile).** On the install page, tap **Copy mobile loader**. It is a bookmark of about 380 characters that loads the latest version from GitHub Pages, so it fits on any phone. Create a bookmark named **Amazon Now Deals**, paste it as the address, and run it from the address bar on amazon.in. The full bookmarklet (about 65 KB, no network needed) is in `dist/bookmarklet.txt`.
 
 **Userscript.** Install `dist/amazon-now-deals.user.js` in Tampermonkey or Violentmonkey. A small Deals button appears on every amazon.in page.
 

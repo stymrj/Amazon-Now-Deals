@@ -1,6 +1,7 @@
 # Changelog
 
 ## v2.0.0 — 2026-11-08
+- Fixed (2026-11-09): install button now reads “Amazon Now Deals” instead of the generic “PriceDrop Hunter”, so the dragged bookmark is named after this store instead of colliding with every other tool.
 
 - Full catalogue: 12 browse groups / 98 subcategories (was 3 aisles) plus 7 keyword groups; only the Ice Cream Store node uses the `merch` endpoint.
 - Blank-results fix: empty scans now report the cause (no Brand ID, signed out, robot check, Amazon 503, rate limit) with a fetched-count status line, instead of an empty grid.
