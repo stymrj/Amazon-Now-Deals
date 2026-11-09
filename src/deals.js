@@ -14,16 +14,40 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const debounce = (f, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
 
-  const price = v => { if (v == null) return 0; if (typeof v === 'number') return v; const m = String(v).replace(/,/g, '').match(/\d+(\.\d+)?/); return m ? +m[0] : 0; };
+  // Prices arrive as a number, a "₹1,999" string, or an object keyed amount /
+  // value / max / text (per-unit {max, min} shapes carry the selling price in
+  // .max, falling back to .min). Read every key instead of only .amount: a
+  // price read as 0 either drops the item outright (no selling price) or
+  // flattens its MRP to the selling price, which computes disc 0 and the
+  // min-discount filter then silently drops a genuine 85–95% off item.
+  const price = v => { if (v == null) return 0; if (typeof v === 'number') return v; if (typeof v === 'object') { for (const k of ['amount', 'value', 'max', 'text', 'defaultValue']) { const p = price(v[k]); if (p > 0) return p; } if (v.min != null) { const p = price(v.min); if (p > 0) return p; } return 0; } const m = String(v).replace(/,/g, '').match(/\d+(\.\d+)?/); return m ? +m[0] : 0; };
+  // Savings percent: whole numbers ("90", 85.5) are the norm; a 0–1 fraction
+  // (0.9 = 90%) is read as a fraction so it cannot zero out a discount the
+  // prices themselves prove. Returns NaN for anything unparseable, so the
+  // caller falls back to computing the discount from MRP and selling price.
+  const pctOf = v => { const n = parseFloat(String(v).replace(/,/g, '').replace(/%$/, '')); if (!Number.isFinite(n)) return NaN; return Math.round(n > 0 && n < 1 ? n * 100 : n); };
   const guessBrand = t => (String(t).trim().split(/\s+/)[0] || '').replace(/[^\w&'-]/g, '');
   const EXCLUDED = [];
   const allowed = p => { const t = p.title.toLowerCase(); return !EXCLUDED.some(k => t.includes(k)); };
   const KWG = (id, name, kws) => ({ id, name, subs: kws.map(k => [k, k[0].toUpperCase() + k.slice(1)]) });
 
   // ───────────────────────── Catalogue ─────────────────────────
+  // Category nodes are the Nov 2026 tez/browse catalogue (87 browse aisles + keyword
+  // groups below). Node IDs are Amazon Now browse nodes; only the Ice Cream Store
+  // node uses the merch endpoint, the rest use category.
   const GROUPS = [
-    { id: 'staples', name: 'Grocery & Staples', subs: [['204870009031', 'Atta & Flours'], ['204870014031', 'Rice & Grains']] },
-    { id: 'icecream', name: 'Ice Cream Store', merch: true, subs: [['216450600031', 'Ice Cream']] },
+    { id: 'staples', name: 'Grocery & Staples', subs: [['204870009031', 'Atta & Flours'], ['204870014031', 'Rice & Grains'], ['204870007031', 'Dals & Pulses'], ['204870004031', 'Chana & Whole Pulses'], ['204870005031', 'Cooking Oils & Ghee'], ['204870010031', 'Olive & Premium Oils'], ['204870013031', 'Spices & Masalas'], ['204870008031', 'Salt & Sugar'], ['204870012031', 'Poha & Daliya'], ['204870016031', 'Soya Chunks'], ['219564344031', 'Instant Noodles & Pasta']] },
+    { id: 'cat-dairy', name: 'Dairy, Bread & Eggs', subs: [['204870018031', 'Fresh Milk'], ['204870003031', 'Bread & Bakery'], ['204870006031', 'Curd & Yogurt'], ['204870011031', 'Paneer & Fresh Dairy'], ['204870015031', 'Cheese & Butter'], ['204870019031', 'Fresh Cream'], ['204924567031', 'Dairy Whitener & Powder'], ['204870001031', 'Plant & Coconut Milk']] },
+    { id: 'cat-snacks', name: 'Snacks, Sweets & Treats', subs: [['204924526031', 'Chocolates'], ['204924531031', 'Premium Chocolates'], ['204924530031', 'Chips & Crisps'], ['215540425031', 'Indian Namkeen'], ['204924562031', 'Bhujia & Sev'], ['204924537031', 'Wafers & Biscuits'], ['204924550031', 'Kurkure & Extruded'], ['204924539031', 'Popcorn'], ['204924540031', 'Nachos & Mad Angles'], ['204924552031', 'Sweets & Mithai'], ['204924571031', 'Chikki & Peanut Treats'], ['204924555031', 'Roasted Makhana'], ['204924572031', 'Candies & Marshmallows'], ['204924573031', 'Cakes & Brownies'], ['204924561031', 'Chewing Gums & Mints'], ['204924525031', 'Dry Fruits & Nuts'], ['204924569031', 'Almonds & Cashews (Raw)']] },
+    { id: 'cat-drinks', name: 'Beverages & Drinks', subs: [['204924556031', 'Cold Drinks & Sodas'], ['204924559031', 'Tea (Leaf & Bags)'], ['204924558031', 'Coffee (Instant & Filter)'], ['204924568031', 'Fruit Juices & Nectars'], ['204870017031', 'Milkshakes & Flavored Milk'], ['204924557031', 'Lassi & Buttermilk'], ['204924563031', 'Club Soda & Mixes'], ['205015903031', 'Electrolytes & Energy Drinks']] },
+    { id: 'icecream', name: 'Ice Creams & Frozen', merch: true, subs: [['216450650031', 'Gourmet Ice Cream Tubs'], ['216450641031', 'Ice Cream Cones & Cornettos'], ['216450655031', 'Ice Cream Sticks & Bars'], ['216450649031', 'Ice Cubes & Party Ice'], ['216450600031', 'Ice Cream Store']] },
+    { id: 'cat-care', name: 'Personal Care & Beauty', subs: [['204992615031', 'Facial Cleansers & Face Wash'], ['204992651031', 'Sunscreens (SPF)'], ['204992652031', 'Face Serums & Treatments'], ['204992632031', 'Face Creams & Moisturizers'], ['204992631031', 'Bathing Soaps & Bars'], ['204992628031', 'Body Wash & Shower Gel'], ['204992627031', 'Body Lotions'], ['204992645031', 'Hair Care & Shampoos'], ['205015907031', 'Hair Growth Serums'], ['204992619031', 'Men Grooming & Shaving'], ['204992654031', 'Feminine Hygiene'], ['204992616031', 'Makeup & Lipsticks']] },
+    { id: 'cat-health', name: 'Oral Care & Health', subs: [['205015906031', 'Toothpaste'], ['205015905031', 'Toothbrushes'], ['205015911031', 'Mouthwash'], ['205015902031', 'Teeth Whitening & Floss'], ['205015895031', 'Whey & Plant Protein'], ['205015896031', 'Nutrition Drinks (Ensure)'], ['205015912031', 'Creatine Monohydrate'], ['205015904031', 'Multivitamins & Supplements'], ['205015909031', 'Condoms & Sexual Wellness'], ['205015908031', 'Lubricants']] },
+    { id: 'cat-home', name: 'Home Care & Cleaning', subs: [['204952379031', 'Liquid Detergent (Matic)'], ['204952381031', 'Detergent Powders'], ['204952380031', 'Detergent Bars'], ['204952375031', 'Detergent Pods & Capsules'], ['204952386031', 'Fabric Conditioners'], ['204952385031', 'Fabric Whiteners (Vanish)'], ['204924564031', 'Dishwash Gels & Bars'], ['204924565031', 'Dishwasher Tablets & Salts'], ['204952368031', 'Floor Cleaners (Lizol)'], ['204952388031', 'Toilet Cleaners (Harpic)'], ['204952387031', 'Bathroom Cleaners'], ['204952373031', 'Glass & Machine Cleaners'], ['204952378031', 'Antiseptic Liquids (Dettol)'], ['204952383031', 'Puja Needs & Agarbatti'], ['204952372031', 'Dog Food'], ['204952374031', 'Cat Food']] },
+    { id: 'cat-kitchen', name: 'Kitchen & Home', subs: [['206264740031', 'Pressure Cookers'], ['206264741031', 'Storage Containers'], ['206264742031', 'Lunch Boxes & Tiffins'], ['206264743031', 'Insulated Bottles & Flasks'], ['205015892031', 'Fast Chargers & Cables'], ['204952370031', 'Cloth Stands & Hangers']] },
+    { id: 'cat-fresh', name: 'Fresh Produce & Meat', subs: [['218833871031', 'Fresh Vegetables'], ['218833884031', 'Fresh Fruits'], ['218876203031', 'Meat & Seafood']] },
+    { id: 'cat-baby', name: 'Baby Care', subs: [['211421666031', 'Diapers & Baby Care']] },
+    { id: 'cat-paan', name: 'Paan Corner', subs: [['219564338031', 'Rolling Papers & Lighters']] },
     KWG('grocery', 'Grocery (search)', ['dal', 'oil', 'ghee', 'sugar', 'salt', 'masala', 'dry fruits']),
     KWG('snacks', 'Snacks (search)', ['chips', 'biscuits', 'namkeen', 'chocolate', 'noodles']),
     KWG('drinks', 'Drinks (search)', ['tea', 'coffee', 'juice', 'cold drink']),
@@ -33,77 +57,199 @@
     KWG('tech', 'Electronics (search)', ['charger', 'earphones', 'cable', 'power bank'])
   ];
   let noLoc = false;
+  // Nov 2026 blank-results fix: a fetch that returns no data must say why (sign-in,
+  // robot check, 503) instead of opening an empty grid. The last such message is
+  // kept here and shown in the empty state after a scan.
+  let lastFetchError = '';
+  function pageResult(items, more, error) { items.more = more; if (error) items.error = error; return items; }
+  function classifyFetchError(status, ct) {
+    if (status === 503) return 'Amazon returned a 503 / rush-hour error page instead of search results. Wait a few minutes and retry from a normal browser tab.';
+    if (status === 429) return 'Amazon rate-limited the scan (HTTP 429). Wait a few minutes and retry.';
+    if (status === 401 || status === 403) return 'Amazon refused the session (HTTP ' + status + '). Sign in to amazon.in again, then retry.';
+    if (status === 204) return 'Amazon returned no data (HTTP 204). Sign in and set your Amazon Now address first.';
+    if (ct && ct.indexOf('json') < 0) return 'Amazon returned a web page instead of data (signed out or a robot check). Open amazon.in normally, complete any check, then retry.';
+    return 'Amazon returned HTTP ' + status + ' instead of deal data.';
+  }
   function brandId() {
     if (store.brandId) return store.brandId;
     try {
       const v = sessionStorage.getItem('__aznowBrandId'); if (v) return v;
       const q = new URLSearchParams(location.search);
-      return q.get('qcbrand') || q.get('brandId') || q.get('almBrandId') || '';
+      const qp = q.get('qcbrand') || q.get('brandId') || q.get('almBrandId');
+      if (qp) return qp;
+      const link = document.querySelector('a[href*="brandId="], a[href*="qcbrand="], a[href*="almBrandId="]');
+      if (link) { const m = link.href.match(/(?:brandId|qcbrand|almBrandId)=([^&]+)/); if (m && m[1]) return m[1]; }
+      const scripts = document.querySelectorAll('script[type="a-state"]');
+      for (const sc of scripts) { try { const parsed = JSON.parse(sc.textContent || ''); if (parsed && parsed.almBrandId) return parsed.almBrandId; } catch (e) { /* not JSON */ } }
+      const hm = document.documentElement.innerHTML.match(/almBrandId['"&:=\s]+([A-Za-z0-9_-]{8,14})/);
+      if (hm && hm[1]) return hm[1];
+      return '';
     } catch (e) { return ''; }
   }
   const first = (...v) => { for (const x of v) { const s = x && typeof x === 'object' ? (x.name || x.displayName || x.text) : x; if (s) return String(s); } return ''; };
   function normalise(y, cat) {
-    const title = y.title, sell = price(y.buyingPrice && y.buyingPrice.amount);
+    const title = y.title;
+    const buy = y.buyingPrice;
+    const sell = price(buy) || price(y.price) || price(y.offerPrice) || price(y.dealPrice);
     if (!title || !sell) return null;
-    let mrp = price(y.listPrice && y.listPrice.amount); if (mrp < sell) mrp = sell;
-    let disc = y.savings && y.savings.percentage != null ? parseInt(y.savings.percentage, 10) : NaN;
+    let mrp = price(y.listPrice); if (mrp < sell) mrp = sell;
+    let disc = y.savings && y.savings.percentage != null ? pctOf(y.savings.percentage) : NaN;
     if (!(disc >= 0)) disc = mrp > sell ? Math.round((mrp - sell) / mrp * 100) : 0;
     const hi = y.heroImage || {}, pi = (y.productImages && y.productImages[0]) || {};
-    const img = hi.mediumResImageUrl || hi.lowResImageUrl || hi.highResImageUrl || pi.lowResImageUrl || pi.highResImageUrl || '';
+    const img = hi.mediumResImageUrl || hi.lowResImageUrl || hi.highResImageUrl || pi.lowResImageUrl || pi.highResImageUrl || (typeof y.image === 'string' ? y.image : '') || '';
     const brand = first(y.brand, y.brandName, y.brandText, y.byLine, y.byline, y.manufacturer) || guessBrand(title);
     return { id: String(y.asin), title: String(title) + (y.packSize ? ' · ' + y.packSize : ''), brand, price: sell, mrp, disc, save: mrp - sell, img, url: 'https://www.amazon.in/dp/' + y.asin, inStock: true, cat };
   }
   function extract(json, cat) {
     const out = [], seen = new Set();
+    const root = json && json.response ? json.response : json;
     (function walk(o, d) {
       if (!o || typeof o !== 'object' || d > 16) return;
       if (Array.isArray(o)) { for (const x of o) walk(x, d + 1); return; }
       if (o.asin && o.title && o.buyingPrice) { const p = normalise(o, cat); if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); } return; }
       for (const k in o) walk(o[k], d + 1);
-    })(json, 0);
+    })(root, 0);
     return out;
   }
   async function fetchPage(job, page, ctl) {
     const bid = brandId();
-    if (!bid) { noLoc = true; return []; }
+    if (!bid) {
+      noLoc = true;
+      lastFetchError = 'No Brand ID found. Open amazon.in/tez/browse/home so your Amazon Now address and brand ID are set, then scan again.';
+      return pageResult([], false, lastFetchError);
+    }
     const offset = (page - 1) * 10;
-    if (offset >= 30) return [];
+    if (offset >= 50) return pageResult([], false);
     const url = job.kind === 'kw'
       ? 'https://www.amazon.in/tez/browse/searchByKeyword?keyword=' + encodeURIComponent(job.q) + '&brandId=' + encodeURIComponent(bid) + '&offset=' + offset + '&spellCorrectionDisabled=false'
-      : 'https://www.amazon.in/tez/browse/' + (job.g.merch ? 'merch' : 'category') + '?nodeId=' + job.node + '&brandId=' + encodeURIComponent(bid) + '&offset=' + offset;
+      : 'https://www.amazon.in/tez/browse/' + ((job.merch || job.g.merch) ? 'merch' : 'category') + '?nodeId=' + job.node + '&brandId=' + encodeURIComponent(bid) + '&offset=' + offset;
     let lastErr;
     for (let a = 0; a < 4; a++) {
       if (ctl.stop) throw new Error('stopped');
       try {
         const r = await W.fetch(url, { credentials: 'include' });
-        if (r.status === 429) { await sleep(4000 * (a + 1)); continue; }
-        if (r.status >= 500) throw new Error('HTTP ' + r.status);
-        if (!r.ok) { noLoc = true; return []; }
-        // Signed out or no Amazon Now location: Amazon answers 204, or a sign-in page instead of data.
-        if (r.status === 204 || (r.headers.get('content-type') || '').indexOf('json') < 0) { noLoc = true; return []; }
-        return extract(await r.json(), job.g.name + ' › ' + job.name);
+        if (r.status === 429 || r.status === 503) { await sleep(4000 * (a + 1)); continue; }
+        if (r.status >= 500) { await sleep(2000 * (a + 1)); continue; }
+        // Signed out or no Amazon Now location: Amazon answers 204, or a sign-in /
+        // robot-check page instead of data. Surface that instead of a blank grid.
+        if (!r.ok || r.status === 204 || (r.headers.get('content-type') || '').indexOf('json') < 0) {
+          noLoc = true;
+          lastFetchError = classifyFetchError(r.status, r.headers.get('content-type') || '');
+          return pageResult([], false, lastFetchError);
+        }
+        const data = await r.json();
+        const items = extract(data, job.g.name + ' › ' + job.name);
+        // Fallback shape: tez JSON empty for a keyword search — retry once against
+        // the /s global search page and parse its cards instead of showing nothing.
+        if (job.kind === 'kw' && page === 1 && !items.length) {
+          try {
+            const hr = await W.fetch('https://www.amazon.in/s?i=amazontez&k=' + encodeURIComponent(job.q) + '&s=pct-off-with-tax&dc', { credentials: 'include' });
+            if (hr.ok) {
+              const fb = extractFromSearchHtml(await hr.text(), job.g.name + ' › ' + job.name);
+              if (fb.items.length) return pageResult(fb.items, false);
+              if (fb.error) { lastFetchError = fb.error; return pageResult([], false, fb.error); }
+            }
+          } catch (e) { /* fallback is best-effort; keep the empty tez result */ }
+        }
+        // tez/browse paging lives in data.metadata: hasMoreWidgets / nextOffset.
+        const meta = data && data.data && data.data.metadata;
+        const more = meta && meta.hasMoreWidgets !== undefined ? !!meta.hasMoreWidgets : items.length >= 10;
+        return pageResult(items, more);
       } catch (e) { lastErr = e; await sleep(700 * (a + 1)); }
     }
+    lastFetchError = (lastErr && lastErr.message) || 'rate limited';
     throw lastErr || new Error('rate limited');
   }
   const P = {
     key: 'anr_v1', hostRe: /(^|\.)amazon\.in$/,
-    defaults: { groups: ['staples', 'grocery', 'snacks'], brandId: '', depth: 1 },
+    defaults: { groups: ['staples', 'grocery', 'snacks'], brandId: '', depth: 2 },
     jobs: st => {
       const jobs = [];
       for (const g of GROUPS) {
         if (!st.groups.includes(g.id)) continue;
-        for (const [c, n] of g.subs) jobs.push(/^\d+$/.test(c) ? { g, name: n, kind: 'cat', node: c } : { g, name: n, kind: 'kw', q: c });
+        for (const [c, n] of g.subs) jobs.push(/^\d+$/.test(c) ? { g, name: n, kind: 'cat', node: c, merch: c === '216450600031' } : { g, name: n, kind: 'kw', q: c });
       }
       return jobs;
     },
     fetchPage,
     noLocation: () => noLoc,
+    lastError: () => lastFetchError,
     noLocMsg: 'No results. Sign in to Amazon, open amazon.in/tez/browse/home so your Amazon Now address and brand ID are set, then scan again.',
     locCheck: () => brandId() ? true : null,
     locUI: (st, e) => `<label class="row" style="margin-bottom:8px"><span>Brand ID</span><input class="fld" style="width:150px" data-in="brandId" placeholder="auto-detect" value="${e(st.brandId)}"></label>`,
     locInput: (k, v) => { if (k === 'brandId') { store.brandId = v.trim().slice(0, 64); save(); return true; } return false; }
   };
+  // ── Fallback: Amazon Now global search page (/s?i=amazontez) as HTML ──────────
+  // Second API shape. When the tez/browse JSON endpoint returns nothing for a keyword,
+  // fetchPage retries once against the /s search page and parses its product cards.
+  // Selectors mirror the Nov 2026 audit: any div[data-asin] counts (Amazon sometimes
+  // drops data-component-type), sponsored cards are skipped, prices come from
+  // data-csa-c-price-to-pay / strike-through with .a-offscreen fallbacks.
+  // Regex-based (no DOMParser) so the same code runs in the browser and in node tests.
+  function extractFromSearchHtml(html, cat) {
+    const low = String(html || '').toLowerCase();
+    if (low.indexOf('service unavailable') !== -1 || low.indexOf('rush hour') !== -1) return { items: [], error: 'Amazon returned a 503 Service Unavailable / rush-hour error page instead of search results. Wait a few minutes and retry from a normal browser tab.' };
+    if (low.indexOf('robot check') !== -1 || low.indexOf('enter the characters you see') !== -1 || low.indexOf('automated access') !== -1) return { items: [], error: 'Amazon showed a robot / CAPTCHA check instead of search results. Open amazon.in normally, complete the check, then retry the search.' };
+    const dec = t => String(t || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    const num = t => { if (t == null) return 0; const m = String(t).replace(/,/g, '').match(/\d+(\.\d+)?/); return m ? +m[0] : 0; };
+    const out = [], seen = new Set();
+    const parts = String(html || '').split(/<div[^>]*\bdata-asin="([A-Za-z0-9]{10})"/);
+    for (let i = 1; i < parts.length; i += 2) {
+      const asin = parts[i], seg = parts[i + 1] || '';
+      if (seen.has(asin)) continue;
+      seen.add(asin);
+      if (/puis-sponsored-label-text|sp-sponsored-result/.test(seg.slice(0, 6000))) continue;
+      const tm = seg.match(/<h2[^>]*>[\s\S]{0,600}?<span[^>]*>([^<]{2,200})<\/span>/);
+      const title = tm ? dec(tm[1]) : '';
+      if (!title) continue;
+      let sell = num((seg.match(/data-csa-c-price-to-pay="([\d,]+(?:\.\d+)?)"/) || [])[1]);
+      let mrp = num((seg.match(/data-csa-c-strike-through-price="([\d,]+(?:\.\d+)?)"/) || [])[1]);
+      if (!sell) {
+        const off = [...seg.matchAll(/<span class="a-offscreen">[^<]*?([\d,]+(?:\.\d+)?)[^<]*<\/span>/g)].map(m => num(m[1])).filter(n => n > 0);
+        if (off.length) sell = off[0];
+        if (!mrp) { const sm = seg.match(/data-a-strike[\s\S]{0,500}?<span class="a-offscreen">[^<]*?([\d,]+(?:\.\d+)?)[^<]*<\/span>/); if (sm) mrp = num(sm[1]); else if (off.length > 1) mrp = off[1]; }
+      }
+      if (!sell) continue;
+      if (!mrp || mrp < sell) mrp = sell;
+      let disc = mrp > sell ? Math.round((mrp - sell) / mrp * 100) : 0;
+      if (!disc) { const dm = seg.match(/\((\d+)%\s*off\)/i); if (dm) disc = parseInt(dm[1], 10); }
+      const im = seg.match(/<img[^>]*class="[^"]*s-image[^"]*"[^>]*src="([^"]+)"/) || seg.match(/<img[^>]+src="([^"]+)"/);
+      const img = im ? im[1] : '';
+      out.push({ id: asin, title, brand: guessBrand(title), price: sell, mrp, disc, save: mrp - sell, img, url: 'https://www.amazon.in/dp/' + asin, inStock: true, cat });
+    }
+    return { items: out, error: null };
+  }
+  // ── Built-in self-test (sidebar button + api.runSelfTest) ───────────────────
+  // Pure: runs the parser over embedded fixtures and the error classifier, returns
+  // { ok, checks: [{ name, pass }] }. The click handler turns it into a toast.
+  // test-results-tab.js runs this same function in node.
+  function selfTest() {
+    const checks = [];
+    const tez = { data: { widgets: [{ data: { products: [
+      { asin: 'B0SELF0001', title: 'Test Atta 10 kg', buyingPrice: { amount: 450 }, listPrice: { amount: 900 }, savings: { percentage: 50 }, heroImage: { mediumResImageUrl: 'https://example.com/a.jpg' }, packSize: '10 kg' },
+      { asin: 'B0SELF0002', title: 'Test Rice 5 kg', buyingPrice: '299', listPrice: '599', heroImage: {}, packSize: '5 kg' },
+      { asin: 'B0SELF0003', title: 'Test Dal 1 kg', buyingPrice: { max: 100 }, listPrice: { max: 1000 }, heroImage: {}, packSize: '1 kg' },
+      { asin: 'B0SELF0004', title: 'Test Oil 1 L', buyingPrice: { amount: 99 }, listPrice: '₹999', heroImage: {}, packSize: '1 L' },
+      { asin: 'B0SELF0005', title: 'Test Coffee 200 g', buyingPrice: { amount: 100 }, listPrice: { amount: 1000 }, savings: { percentage: 0.9 }, heroImage: {}, packSize: '200 g' },
+      { title: 'No ASIN here', buyingPrice: { amount: 10 }, listPrice: { amount: 20 } }
+    ] } }] } };
+    const got = extract(tez, 'Self-test');
+    checks.push({ name: 'tez parser: 5 valid items extracted, item without ASIN skipped', pass: got.length === 5 && got[0].disc === 50 && got[1].price === 299 });
+    checks.push({ name: 'tez parser: highest-discount shapes keep their discount (string prices 50%, max-only prices 90%, string MRP 90%, fraction savings 90%)', pass: got[1].disc === 50 && got[2].disc === 90 && got[3].disc === 90 && got[4].disc === 90 });
+    const html = '<div data-asin="B0SELF0011" data-component-type="s-search-result"><h2><a><span>Test Diya Set</span></a></h2><span data-csa-c-price-to-pay="99" data-csa-c-strike-through-price="329"></span><img class="s-image" src="https://example.com/d.jpg"></div>'
+      + '<div data-asin="B0SELF0012"><h2><a><span>Sponsored Diya</span></a></h2><span class="puis-sponsored-label-text">Sponsored</span><span data-csa-c-price-to-pay="10" data-csa-c-strike-through-price="20"></span></div>'
+      + '<div data-asin="B0SELF0013"><h2><a><span>Test Lights Pack</span></a></h2><span class="a-price"><span class="a-offscreen">₹149</span></span><span class="a-price" data-a-strike><span class="a-offscreen">₹499</span></span></div>';
+    const fb = extractFromSearchHtml(html, 'Self-test');
+    checks.push({ name: '/s HTML fallback: 2 cards parsed, sponsored card skipped', pass: fb.items.length === 2 && fb.items[0].disc === 70 && fb.items[1].price === 149 });
+    checks.push({ name: 'error classifier: 503 and robot-check pages surface a message, not a blank grid', pass: classifyFetchError(503, '').indexOf('503') !== -1 && extractFromSearchHtml('<html>robot check enter the characters you see</html>', 'x').error !== null });
+    checks.push({ name: 'paging: a full page reports more=true, a short page more=false', pass: pageResult([1, 2], true).more === true && pageResult([1], false).more === false });
+    return { ok: checks.every(c => c.pass), checks };
+  }
+  // ── Export helpers ───────────────────────────────────────────────────────────
+  function toCSV(list) {
+    const rows = [['Title', 'Brand', 'Category', 'Price', 'MRP', 'Discount %', 'Saving', 'In stock', 'URL']].concat(list.map(p => [p.title, p.brand, p.cat, p.price, p.mrp, p.disc, p.save, p.inStock, p.url]));
+    return rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+  }
   // Live data can only be read from the store's own site, inside your logged-in tab.
   const OFFSITE = !P.hostRe.test(location.hostname);
 
@@ -123,7 +269,7 @@
 
   // ───────────────────────── State ─────────────────────────
   const S = { products: new Map(), scanning: false, done: 0, total: 0, errors: 0, ctl: { stop: false },
-    q: '', brand: '', cat: '', preset: '', pick: false, tgm: false, favOnly: false, newOnly: false, shown: 60, tab: 'best', panel: false, startedAt: 0 };
+    q: '', brand: '', cat: '', preset: '', pick: false, tgm: false, favOnly: false, newOnly: false, shown: 60, tab: 'best', panel: false, startedAt: 0, fetched: 0, fetchErrors: [], tried: false };
 
   // ───────────────────────── Scanner ─────────────────────────
   async function scan() {
@@ -132,13 +278,15 @@
     if (typeof captureUI === 'function') { autoScroll(); return; }
     const jobs = P.jobs(store);
     if (!jobs.length) { toast('Pick at least one category'); return; }
-    S.scanning = true; S.ctl = { stop: false }; S.done = 0; S.errors = 0; S.total = jobs.length; S.startedAt = Date.now();
+    S.scanning = true; S.ctl = { stop: false }; S.done = 0; S.errors = 0; S.fetched = 0; S.fetchErrors = []; S.total = jobs.length; S.startedAt = Date.now();
     S.products.clear(); S.shown = 60; render();
     const ctl = S.ctl, queue = jobs.slice();
     const runJob = async job => {
       try {
         for (let page = 1; page <= store.depth && !ctl.stop; page++) {
           const items = await P.fetchPage(job, page, ctl);
+          S.fetched += items.length;
+          if (items.error && !S.fetchErrors.includes(items.error)) S.fetchErrors.push(items.error);
           const fresh = ingest(items);
           scheduleRender();
           // Stop on the last page, or when a page adds nothing and does not promise more.
@@ -151,11 +299,11 @@
     if (queue.length) await runJob(queue.shift());
     const worker = async () => { while (queue.length && !ctl.stop) await runJob(queue.shift()); };
     await Promise.all(Array.from({ length: (typeof P !== 'undefined' && P.workers) || 4 }, worker));
-    S.scanning = false;
+    S.scanning = false; S.tried = true;
     recordPrices();
     store.lastScan = Date.now(); save(); render();
     notify();
-    if (P.noLocation() && !S.products.size) { toast(P.noLocMsg); return; }
+    if (P.noLocation() && !S.products.size) { toast(S.fetchErrors[0] || P.noLocMsg); return; }
     toast(ctl.stop ? 'Scan stopped' : `Scan complete · ${S.products.size} products` + (S.errors ? ` · ${S.errors} failed` : ''));
   }
 
@@ -527,7 +675,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
   <label class="sw" style="margin-top:16px"><input type="checkbox" data-in="stockOnly" ${store.stockOnly ? 'checked' : ''}> In stock only</label>
   <label class="sw" style="margin-top:10px"><input type="checkbox" data-in="favOnly" ${S.favOnly ? 'checked' : ''}> Saved only</label>
   <label class="sw" style="margin-top:10px"><input type="checkbox" data-in="newOnly" ${S.newOnly ? 'checked' : ''}> New or price dropped</label></div>
- <div><h4>${ic('download', 15)}Export</h4><div class="chips"><button class="chip" data-act="csv">${ic('download', 14)}CSV</button><button class="chip" data-act="copyall">${ic('copy', 14)}Copy top 20</button><button class="chip" data-act="unhide">${ic('eyeoff', 14)}Unhide (${store.hidden.length})</button></div>
+ <div><h4>${ic('download', 15)}Export</h4><div class="chips"><button class="chip" data-act="csv">${ic('download', 14)}CSV</button><button class="chip" data-act="json">${ic('download', 14)}JSON</button><button class="chip" data-act="selftest">${ic('check', 14)}Self-test</button><button class="chip" data-act="copyall">${ic('copy', 14)}Copy top 20</button><button class="chip" data-act="unhide">${ic('eyeoff', 14)}Unhide (${store.hidden.length})</button></div>
   <p class="note" style="margin-top:14px"><kbd>/</kbd> search &nbsp;<kbd>S</kbd> scan &nbsp;<kbd>Esc</kbd> close</p></div>
 </aside>`;
   }
@@ -543,6 +691,10 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
   function offsiteCard() {
     return `<div class="check"><h3>Open ${esc(PLATFORM)} to see live deals</h3><p class="note" style="font-size:14px">PriceDrop Hunter reads live prices inside your own ${esc(PLATFORM)} tab, so it can only fetch deals there.</p><p class="note" style="font-size:14px;margin-top:8px"><b>Userscript installed?</b> Hunter opens by itself on the store. <b>Using the bookmark?</b> After the store opens, tap your PriceDrop Hunter bookmark again on that page.</p><a class="btn" href="${STORE_URL}#pricedrop" target="_blank" rel="noopener" style="margin-top:16px;text-decoration:none">${ic('ext')}Open ${esc(PLATFORM)}</a></div>`;
   }
+  function scanStatus() {
+    const err = S.fetchErrors[0];
+    return `<p class="note" style="background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px">Last scan fetched <b>${S.fetched} product${S.fetched === 1 ? '' : 's'}</b> and showed none.${err ? `<br><b>Fetch problem:</b> ${esc(err)}` : '<br>Nothing matched, or every category came back empty — try fewer categories, a lower minimum discount, or scan again in a few minutes.'}</p>`;
+  }
   function checklist() {
     const capture = typeof captureUI === 'function';
     const loc = typeof fkLocCheck === 'function' ? fkLocCheck() : (typeof P !== 'undefined' && P.locCheck ? P.locCheck() : null);
@@ -552,7 +704,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
       [typeof GM_xmlhttpRequest === 'function' ? true : null, 'Userscript installed', 'Optional. Recommended for reliable Telegram alerts.'],
       [tgReady() ? true : null, 'Telegram connected', 'Optional. Press Telegram in the top bar to connect your bot.']
     ];
-    return `<div class="check"><h3>Before your first ${capture ? 'capture' : 'scan'}</h3>${rows.map(([ok, t, hint]) => `<div class="ck ${ok ? 'ok' : ok === false ? 'no' : 'q'}"><span>${ic(ok ? 'check' : ok === false ? 'x' : 'info', 15)}</span><div><b>${t}</b>${!ok && hint ? `<p>${hint}</p>` : ''}</div></div>`).join('')}<button class="btn" data-act="scan" style="margin-top:16px">${ic('scan')}${capture ? 'Auto-scroll page' : 'Scan deals'}</button></div>`;
+    return `<div class="check"><h3>Before your first ${capture ? 'capture' : 'scan'}</h3>${S.tried ? scanStatus() : ''}${rows.map(([ok, t, hint]) => `<div class="ck ${ok ? 'ok' : ok === false ? 'no' : 'q'}"><span>${ic(ok ? 'check' : ok === false ? 'x' : 'info', 15)}</span><div><b>${t}</b>${!ok && hint ? `<p>${hint}</p>` : ''}</div></div>`).join('')}<button class="btn" data-act="scan" style="margin-top:16px">${ic('scan')}${capture ? 'Auto-scroll page' : 'Scan deals'}</button></div>`;
   }
   function card(p, fav, qtyMap) {
     const inList = qtyMap[p.id];
@@ -778,9 +930,15 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
       case 'openlinks': Object.keys(store.list).map(i => S.products.get(i)).filter(p => p && p.url).forEach(p => window.open(p.url, '_blank', 'noopener')); break;
       case 'copyall': copy(filtered().slice(0, 20).map(p => `${p.disc}% off · ${p.title} · ${$inr(p.price)} (MRP ${$inr(p.mrp)})${p.url ? '\n' + p.url : ''}`).join('\n'), 'Top 20 deals copied'); break;
       case 'csv': {
-        const rows = [['Title', 'Brand', 'Category', 'Price', 'MRP', 'Discount %', 'Saving', 'In stock', 'URL']].concat(filtered().map(p => [p.title, p.brand, p.cat, p.price, p.mrp, p.disc, p.save, p.inStock, p.url]));
-        const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
-        const a2 = document.createElement('a'); a2.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a2.download = 'amazon-now-deals.csv'; a2.click(); toast('CSV downloaded'); break;
+        const a2 = document.createElement('a'); a2.href = URL.createObjectURL(new Blob([toCSV(filtered())], { type: 'text/csv' })); a2.download = 'amazon-now-deals.csv'; a2.click(); toast('CSV downloaded'); break;
+      }
+      case 'json': {
+        const a2 = document.createElement('a'); a2.href = URL.createObjectURL(new Blob([JSON.stringify(filtered(), null, 2)], { type: 'application/json' })); a2.download = 'amazon-now-deals.json'; a2.click(); toast('JSON downloaded'); break;
+      }
+      case 'selftest': {
+        const r = selfTest();
+        toast(r.ok ? `Self-test passed · ${r.checks.length}/${r.checks.length} checks (parser, /s fallback, error messages, paging)` : 'Self-test FAILED: ' + r.checks.filter(c => !c.pass).map(c => c.name).join('; '));
+        break;
       }
     }
   });
@@ -831,6 +989,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
     fabRoot.querySelector('.n').textContent = n ? String(n) : '';
   }
   const api = {
+    runSelfTest() { return selfTest(); },
     show() { fab.style.display = 'none'; host.style.display = 'block'; if (!OFFSITE && !S.scanning && !S.products.size && typeof captureUI !== 'function') setTimeout(openPicker, 300); prevOverflow = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden'; render(); },
     hide() { host.style.display = 'none'; document.documentElement.style.overflow = prevOverflow; updateFab(); placeFab(); fab.style.display = 'block'; },
     toggle() { host.style.display === 'none' ? api.show() : api.hide(); }
