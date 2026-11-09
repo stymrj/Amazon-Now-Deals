@@ -6,7 +6,7 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 
 ## What's new in v2 (2026-11-08)
 
-- **Full catalogue:** 12 browse groups, 98 subcategories (Grocery & Staples, Dairy, Snacks & Sweets, Beverages, Ice Cream, Personal Care, Oral Care & Health, Home Care, Kitchen & Home, Fresh Produce, Baby Care, Paan Corner) plus 7 keyword groups — up from 3 browse aisles. Only the Ice Cream Store node uses the `merch` endpoint; the rest use `category`.
+- **Full catalogue:** 12 browse groups, 98 subcategories (Grocery & Staples, Dairy, Bread & Eggs, Snacks, Sweets & Treats, Beverages & Drinks, Ice Creams & Frozen, Personal Care & Beauty, Oral Care & Health, Home Care & Cleaning, Kitchen & Home, Fresh Produce & Meat, Baby Care, Paan Corner) plus 7 keyword groups — up from 3 browse aisles. Only the Ice Cream Store node uses the `merch` endpoint; the rest use `category`.
 - **Blank-results fix:** a scan that fetches nothing now says why instead of showing an empty grid — signed out / no Brand ID, robot check, Amazon 503 rush-hour page, or rate limit. The empty state shows how many products the last scan fetched and the exact fetch problem.
 - **Second fetch shape:** when the `tez/browse` JSON endpoint returns nothing for a keyword, the scan retries once against the Amazon Now global search page (`/s?i=amazontez`) and parses its product cards (relaxed `div[data-asin]` selector, sponsored cards skipped).
 - **Better Brand ID detection:** session storage, URL params, page links carrying `brandId`/`qcbrand`/`almBrandId`, `a-state` scripts, and page HTML — so the scan works without pasting the ID by hand.
@@ -19,7 +19,7 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 
 ## Why v2 is stronger
 
-The browser tool already had what a plain deal list doesn't, and v2 keeps all of it: price history with a sparkline on every product you've seen, lowest-ever and price-drop labels, saved-item tracking with per-item drop alerts, a cross-category best-deals row, unit price (per kg / litre / piece) with a value sort, one-tap presets, a shopping list with totals, CSV/JSON export, and light/dark themes. On top of that, v2 adds the reliability layer a deal finder needs most: two fetch shapes with a fallback, retries with backoff on 429/503, real paging signals instead of guessed offsets, and diagnostics that name the cause of zero results. The Telegram bot dedupes by product and keeps a 30-day price history (`data/state.json`), so it sends new deals, price drops and restocks — not the same list every run.
+The browser tool already had what a plain deal list doesn't, and v2 keeps all of it: price history with a sparkline on every product you've seen, lowest-ever and price-drop labels, saved-item tracking with per-item drop alerts, a cross-category best-deals row, unit price (per kg / litre / piece) with a value sort, one-tap presets, a shopping list with totals, CSV/JSON export, and light/dark themes. On top of that, v2 adds the reliability layer a deal finder needs most: two fetch shapes with a fallback, retries with backoff on 429/503, real paging signals instead of guessed offsets, and diagnostics that name the cause of zero results. The Telegram bot dedupes by product and keeps a 30-day price history (`data/state.json`), so it sends new deals and price drops — not the same list every run. It cannot report restocks: Amazon exposes no stock status, so every product is treated as available.
 
 ## Features
 
@@ -69,15 +69,15 @@ Each deal is sent once, and again only if its price drops further. Use the users
 
 ## Telegram bot (GitHub Actions)
 
-Hunter can also run on its own, without a browser, on GitHub Actions. Every 30 minutes it scans Amazon Now, compares with the previous run (kept in `data/state.json`), and sends what changed to Telegram: a morning catalogue, new deals, price drops, and back-in-stock items. Identical prices are not re-sent.
+Hunter can also run on its own, without a browser, on GitHub Actions. Every 30 minutes between 08:31 and 00:01 IST (03:01–18:31 UTC) it scans Amazon Now, compares with the previous run (kept in `data/state.json`), and sends what changed to Telegram: a morning catalogue, new deals, and price drops. Identical prices are not re-sent.
 
 1. Fork [github.com/stymrj/Amazon-Now-Deals](https://github.com/stymrj/Amazon-Now-Deals).
 2. Create a bot with `@BotFather` (`TELEGRAM_BOT_TOKEN`) and get your chat ID from `@userinfobot` (`TELEGRAM_CHAT_ID`).
-3. On amazon.in/tez/browse/home while logged in, copy the Cookie header from DevTools → Network (`AMAZON_COOKIE`) and the `brandId` from a `tez/browse` request URL (`AMAZON_BRAND_ID`). Hunter's sidebar also shows the Brand ID.
+3. On amazon.in/tez/browse/home while logged in, copy the Cookie header from DevTools → Network (`AMAZON_COOKIE`) and the `brandId` from a `tez/browse` request URL (`AMAZON_BRAND_ID`). Hunter's sidebar also has a Brand ID field — it auto-detects the ID for scans, or paste the ID there to save it.
 4. In your fork, add those four as **Secrets**, and set the **Variable** `BOT_ENABLED` = `true`.
 5. In **Actions**, enable workflows, run **Telegram deal alerts** with **Print the messages instead of sending them** ticked to preview, then run it again for real.
 
-Optional variables: `MIN_DISCOUNT`, `THRESHOLDS` (e.g. `staples=55,icecream=55`), `GROUPS`, `PAGES` (1–5), `DIGEST_HOUR_IST`, `RUNNER` (`self-hosted` if GitHub's IPs get blocked). Groups and thresholds live in `bot/config.json`.
+Optional variables: `MIN_DISCOUNT`, `THRESHOLDS` (e.g. `staples=55,icecream=55`), `GROUPS`, `PAGES` (1–5), `DIGEST_HOUR_IST`, `MAX_WORKERS` (default 3), `MAX_ALERTS` (default 40), `RUNNER` (`self-hosted` if GitHub's IPs get blocked). Groups and thresholds live in `bot/config.json`.
 
 Local run: `cp .env.example .env`, then `node bot/run.js --dry-run` (prints, sends nothing) or `node bot/run.js`. Node 18+, no `npm install` needed.
 
@@ -93,13 +93,17 @@ Uses the `tez/browse` JSON endpoints the Amazon Now pages use (`category` / `mer
 - **Robot check / 503:** Amazon showed a check or a rush-hour error page. Open amazon.in normally, complete any check, wait a few minutes, and retry. This is Amazon throttling, not an empty deal list.
 - **Only some categories empty:** that aisle may genuinely have no deals at your minimum discount — lower it, or pick fewer categories for a faster scan (98 aisles × 2 pages takes a while).
 - **Telegram test fails in the bookmarklet:** install the userscript; some shops block bookmarklets from calling Telegram.
+- **Bot run fails with `Missing settings: …`:** the named secret is not set in your fork — add it under Settings → Secrets and variables → Actions.
+- **Bot run exits 1, `TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set`:** set both secrets; a scheduled run with `BOT_ENABLED=true` but no Telegram credentials is a failed run, not a quiet skip.
+- **Bot reports `Amazon refused the session (HTTP 401/403)` or `returned a web page instead of data (signed out or a robot check)`:** the session cookie expired or Amazon challenged it — copy a fresh `AMAZON_COOKIE` from a logged-in tab.
+- **Scheduled runs do nothing:** set the repository **Variable** `BOT_ENABLED` to `true` — the schedule is gated on it. Manual runs from Actions always run.
 
 ## Testing
 
 ```bash
 node --check src/deals.js bot/platform.js bot/core.js   # syntax
-node test-results-tab.js                                # 24 checks: 70-item fixture -> 70 cards, /s fallback, retries, diagnostics, CSV, unit price
-node test/bot-platform.test.js                          # 8 checks: bot fetch layer with stubbed fetch
+node test-results-tab.js                                # 36 checks: 70-item fixture -> 70 cards, /s fallback, retries, diagnostics, CSV, unit price
+node test/bot-platform.test.js                          # 13 checks: bot fetch layer with stubbed fetch
 node build.js                                           # rebuilds dist/ and index.html
 ```
 
@@ -120,7 +124,7 @@ scripts/             category + price-bracket audit helpers (run on amazon.in)
 fixtures/            sample tez payload used by the regression test
 test/                bot platform test (stubbed fetch)
 bot/                 Telegram bot: run.js, core.js, platform.js, config.json
-.github/workflows/   telegram-bot.yml (every 30 minutes)
+.github/workflows/   telegram-bot.yml (every 30 min, 08:31–00:01 IST)
 .env.example         settings for local runs
 build.js             builds dist/ and index.html
 ```
