@@ -14,7 +14,18 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const debounce = (f, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
 
-  const price = v => { if (v == null) return 0; if (typeof v === 'number') return v; const m = String(v).replace(/,/g, '').match(/\d+(\.\d+)?/); return m ? +m[0] : 0; };
+  // Prices arrive as a number, a "₹1,999" string, or an object keyed amount /
+  // value / max / text (per-unit {max, min} shapes carry the selling price in
+  // .max, falling back to .min). Read every key instead of only .amount: a
+  // price read as 0 either drops the item outright (no selling price) or
+  // flattens its MRP to the selling price, which computes disc 0 and the
+  // min-discount filter then silently drops a genuine 85–95% off item.
+  const price = v => { if (v == null) return 0; if (typeof v === 'number') return v; if (typeof v === 'object') { for (const k of ['amount', 'value', 'max', 'text', 'defaultValue']) { const p = price(v[k]); if (p > 0) return p; } if (v.min != null) { const p = price(v.min); if (p > 0) return p; } return 0; } const m = String(v).replace(/,/g, '').match(/\d+(\.\d+)?/); return m ? +m[0] : 0; };
+  // Savings percent: whole numbers ("90", 85.5) are the norm; a 0–1 fraction
+  // (0.9 = 90%) is read as a fraction so it cannot zero out a discount the
+  // prices themselves prove. Returns NaN for anything unparseable, so the
+  // caller falls back to computing the discount from MRP and selling price.
+  const pctOf = v => { const n = parseFloat(String(v).replace(/,/g, '').replace(/%$/, '')); if (!Number.isFinite(n)) return NaN; return Math.round(n > 0 && n < 1 ? n * 100 : n); };
   const guessBrand = t => (String(t).trim().split(/\s+/)[0] || '').replace(/[^\w&'-]/g, '');
   const EXCLUDED = [];
   const allowed = p => { const t = p.title.toLowerCase(); return !EXCLUDED.some(k => t.includes(k)); };
@@ -79,10 +90,10 @@
   function normalise(y, cat) {
     const title = y.title;
     const buy = y.buyingPrice;
-    const sell = price(buy && buy.amount != null ? buy.amount : buy) || price(y.price) || price(y.offerPrice) || price(y.dealPrice);
+    const sell = price(buy) || price(y.price) || price(y.offerPrice) || price(y.dealPrice);
     if (!title || !sell) return null;
-    let mrp = price(y.listPrice && y.listPrice.amount); if (mrp < sell) mrp = sell;
-    let disc = y.savings && y.savings.percentage != null ? parseInt(y.savings.percentage, 10) : NaN;
+    let mrp = price(y.listPrice); if (mrp < sell) mrp = sell;
+    let disc = y.savings && y.savings.percentage != null ? pctOf(y.savings.percentage) : NaN;
     if (!(disc >= 0)) disc = mrp > sell ? Math.round((mrp - sell) / mrp * 100) : 0;
     const hi = y.heroImage || {}, pi = (y.productImages && y.productImages[0]) || {};
     const img = hi.mediumResImageUrl || hi.lowResImageUrl || hi.highResImageUrl || pi.lowResImageUrl || pi.highResImageUrl || (typeof y.image === 'string' ? y.image : '') || '';
@@ -217,10 +228,14 @@
     const tez = { data: { widgets: [{ data: { products: [
       { asin: 'B0SELF0001', title: 'Test Atta 10 kg', buyingPrice: { amount: 450 }, listPrice: { amount: 900 }, savings: { percentage: 50 }, heroImage: { mediumResImageUrl: 'https://example.com/a.jpg' }, packSize: '10 kg' },
       { asin: 'B0SELF0002', title: 'Test Rice 5 kg', buyingPrice: '299', listPrice: '599', heroImage: {}, packSize: '5 kg' },
+      { asin: 'B0SELF0003', title: 'Test Dal 1 kg', buyingPrice: { max: 100 }, listPrice: { max: 1000 }, heroImage: {}, packSize: '1 kg' },
+      { asin: 'B0SELF0004', title: 'Test Oil 1 L', buyingPrice: { amount: 99 }, listPrice: '₹999', heroImage: {}, packSize: '1 L' },
+      { asin: 'B0SELF0005', title: 'Test Coffee 200 g', buyingPrice: { amount: 100 }, listPrice: { amount: 1000 }, savings: { percentage: 0.9 }, heroImage: {}, packSize: '200 g' },
       { title: 'No ASIN here', buyingPrice: { amount: 10 }, listPrice: { amount: 20 } }
     ] } }] } };
     const got = extract(tez, 'Self-test');
-    checks.push({ name: 'tez parser: 2 valid items extracted, item without ASIN skipped', pass: got.length === 2 && got[0].disc === 50 && got[1].price === 299 });
+    checks.push({ name: 'tez parser: 5 valid items extracted, item without ASIN skipped', pass: got.length === 5 && got[0].disc === 50 && got[1].price === 299 });
+    checks.push({ name: 'tez parser: highest-discount shapes keep their discount (string prices 50%, max-only prices 90%, string MRP 90%, fraction savings 90%)', pass: got[1].disc === 50 && got[2].disc === 90 && got[3].disc === 90 && got[4].disc === 90 });
     const html = '<div data-asin="B0SELF0011" data-component-type="s-search-result"><h2><a><span>Test Diya Set</span></a></h2><span data-csa-c-price-to-pay="99" data-csa-c-strike-through-price="329"></span><img class="s-image" src="https://example.com/d.jpg"></div>'
       + '<div data-asin="B0SELF0012"><h2><a><span>Sponsored Diya</span></a></h2><span class="puis-sponsored-label-text">Sponsored</span><span data-csa-c-price-to-pay="10" data-csa-c-strike-through-price="20"></span></div>'
       + '<div data-asin="B0SELF0013"><h2><a><span>Test Lights Pack</span></a></h2><span class="a-price"><span class="a-offscreen">₹149</span></span><span class="a-price" data-a-strike><span class="a-offscreen">₹499</span></span></div>';

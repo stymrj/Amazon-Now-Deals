@@ -3,18 +3,14 @@
 // No network, no Telegram, no real cookies.
 const path = require('path');
 const platform = require(path.join(__dirname, '..', 'bot', 'platform.js'));
+// The production price() from bot/core.js (the ctx the bot actually runs
+// with) — the test must exercise the real function, not a copy of it.
+const { price } = require(path.join(__dirname, '..', 'bot', 'core.js'));
 let pass = 0, fail = 0;
 function check(name, ok, extra) {
   if (ok) { pass++; console.log('  ok - ' + name); }
   else { fail++; console.log('  FAIL - ' + name + (extra ? ' :: ' + extra : '')); }
 }
-const price = v => {
-  if (v == null) return 0;
-  if (typeof v === 'number') return v;
-  if (typeof v === 'object') { for (const k of ['value', 'amount', 'text', 'defaultValue']) { const p = price(v[k]); if (p > 0) return p; } return 0; }
-  const m = String(v).replace(/,/g, '').match(/\d+(\.\d+)?/);
-  return m ? +m[0] : 0;
-};
 const brandOf = t => (String(t).trim().split(/\s+/)[0] || '').replace(/[^\w&'-]/g, '');
 function resp(o) {
   const status = o.status || 200;
@@ -63,6 +59,23 @@ const kwJob = { g: { name: 'Grocery (search)' }, sub: ['dal', 'Dal'] };
   let threw = null;
   try { await platform.fetchPage(catJob, 1, c); } catch (e) { threw = e; }
   check('non-JSON response throws a blocked error', !!threw && threw.blocked === true, threw && threw.message);
+
+  // 6. highest-discount edge shapes: string MRP, max-only and value-keyed
+  // prices, fraction savings — all must parse with their true discounts.
+  const edge = { data: { widgets: [{ data: { products: [
+    { asin: 'B0HD000002', title: 'Bot String MRP Rice 1 kg', buyingPrice: { amount: 99 }, listPrice: '₹999', heroImage: {} },
+    { asin: 'B0HD000004', title: 'Bot Max Price Oil 1 L', buyingPrice: { max: 100 }, listPrice: { max: 1000 }, heroImage: {} },
+    { asin: 'B0HD000005', title: 'Bot Value Price Ghee 1 L', buyingPrice: { value: 120 }, listPrice: { value: 1000 }, heroImage: {} },
+    { asin: 'B0HD000010', title: 'Bot Fraction Savings Coffee 200 g', buyingPrice: { amount: 100 }, listPrice: { amount: 1000 }, savings: { percentage: 0.9 }, heroImage: {} }
+  ] } }], metadata: { hasMoreWidgets: false } } };
+  c.fetch = async () => resp({ json: edge });
+  r = await platform.fetchPage(catJob, 1, c);
+  check('bot edge shapes: all 4 items extracted', r.length === 4, 'len ' + r.length);
+  const edgeById = {}; r.forEach(p => { edgeById[p.id] = p; });
+  check('bot string MRP: disc 90%', (edgeById.B0HD000002 || {}).disc === 90, 'disc ' + (edgeById.B0HD000002 || {}).disc);
+  check('bot max-only prices: disc 90%', (edgeById.B0HD000004 || {}).disc === 90);
+  check('bot value-keyed prices: disc 88%', (edgeById.B0HD000005 || {}).disc === 88);
+  check('bot fraction savings 0.9: disc 90%', (edgeById.B0HD000010 || {}).disc === 90);
 
   console.log('\n' + (fail ? 'FAIL: ' + fail + ' check(s) failed, ' + pass + ' passed' : 'PASS: all ' + pass + ' checks passed'));
   process.exit(fail ? 1 : 0);

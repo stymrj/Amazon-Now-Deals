@@ -2,12 +2,16 @@
 'use strict';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const first = (...v) => { for (const x of v) { const s = x && typeof x === 'object' ? (x.name || x.displayName || x.text) : x; if (s) return String(s); } return ''; };
+// Savings percent: whole numbers ("90", 85.5) are the norm; a 0–1 fraction
+// (0.9 = 90%) is read as a fraction so it cannot zero out a discount the
+// prices themselves prove. NaN falls back to the price-derived discount.
+const pct = v => { const n = parseFloat(String(v).replace(/,/g, '').replace(/%$/, '')); if (!Number.isFinite(n)) return NaN; return Math.round(n > 0 && n < 1 ? n * 100 : n); };
 
 function normalise(y, cat, { price, brandOf }) {
-  const title = y.title, sell = price(y.buyingPrice && y.buyingPrice.amount);
+  const title = y.title, sell = price(y.buyingPrice);
   if (!title || !sell) return null;
-  let mrp = price(y.listPrice && y.listPrice.amount); if (mrp < sell) mrp = sell;
-  let disc = y.savings && y.savings.percentage != null ? parseInt(y.savings.percentage, 10) : NaN;
+  let mrp = price(y.listPrice); if (mrp < sell) mrp = sell;
+  let disc = y.savings && y.savings.percentage != null ? pct(y.savings.percentage) : NaN;
   if (!(disc >= 0)) disc = mrp > sell ? Math.round((mrp - sell) / mrp * 100) : 0;
   return { id: String(y.asin), title: String(title) + (y.packSize ? ' · ' + y.packSize : ''), brand: first(y.brand, y.brandName, y.byLine, y.manufacturer) || brandOf(title), price: sell, mrp, disc, url: 'https://www.amazon.in/dp/' + y.asin, inStock: true, cat };
 }

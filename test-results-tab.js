@@ -43,6 +43,11 @@ const uStart = src.indexOf('const UNITS =');
 const unitsSrc = src.slice(uStart, src.indexOf('};', uStart) + 2);
 const unitOf = eval('(function () {\n' + unitsSrc + '\n' + grabFn('unitOf') + '\nreturn unitOf; })();');
 
+// ---- grab the results-tab sort (byDisc) the Best-deals row uses ----
+const byDiscMatch = src.match(/const byDisc = (\(a, b\) => [^;]+);/);
+if (!byDiscMatch) throw new Error('byDisc missing in src/deals.js');
+const byDisc = eval(byDiscMatch[1]);
+
 // ---- response stub ----
 function resp(o) {
   const status = o.status || 200;
@@ -121,6 +126,26 @@ function renderCards(products) {
     : resp({ json: { data: { widgets: [], metadata: { hasMoreWidgets: false } } } }));
   r = await lib.fetchPage(kwJob, 1, { stop: false });
   check('/s robot-check: error surfaced, not a blank grid', r.length === 0 && /robot/i.test(r.error || ''), 'error=' + r.error);
+
+  console.log('== 7. highest-discount fixture: 85-95% off items render, highest first ==');
+  const hd = JSON.parse(fs.readFileSync(path.join(ROOT, 'fixtures/sample-high-discount.json'), 'utf8'));
+  const hdItems = lib.extract(hd, 'High-discount');
+  check('high-discount fixture: all 11 items extracted (none dropped by the parser)', hdItems.length === 11, 'got ' + hdItems.length);
+  const byHdId = {}; hdItems.forEach(p => { byHdId[p.id] = p; });
+  check('string MRP "₹999" reads as 999, disc 90%', byHdId.B0HD000002.mrp === 999 && byHdId.B0HD000002.disc === 90, 'mrp ' + byHdId.B0HD000002.mrp + ' disc ' + byHdId.B0HD000002.disc);
+  check('number MRP 1000 reads as 1000, disc 95%', byHdId.B0HD000003.mrp === 1000 && byHdId.B0HD000003.disc === 95);
+  check('max-only prices read .max, disc 90%', byHdId.B0HD000004.price === 100 && byHdId.B0HD000004.disc === 90);
+  check('value-keyed prices read .value, disc 88%', byHdId.B0HD000005.price === 120 && byHdId.B0HD000005.disc === 88);
+  check('string prices on both sides compute disc 50% (self-test shape)', byHdId.B0HD000007.price === 299 && byHdId.B0HD000007.mrp === 599 && byHdId.B0HD000007.disc === 50);
+  check('fraction savings 0.9 reads as 90%, not 0%', byHdId.B0HD000010.disc === 90, 'disc ' + byHdId.B0HD000010.disc);
+  check('no MRP and no savings stays disc 0 (no discount signal to invent)', byHdId.B0HD000011.disc === 0);
+  // Same gate the UI's filtered() applies: in stock + disc >= minDisc 30.
+  const hdVisible = hdItems.filter(p => p.inStock && p.disc >= 30).sort(byDisc);
+  check('10 of 11 pass the min-discount-30 gate (only the no-signal item is hidden)', hdVisible.length === 10, 'visible ' + hdVisible.length);
+  check('highest discount renders FIRST in the results tab (95% item first)', hdVisible[0].id === 'B0HD000003', 'first ' + hdVisible[0].id);
+  const hdCards = renderCards(hdVisible);
+  const firstCard = hdCards.split('<article')[1] || '';
+  check('first rendered card is the 95% off item', firstCard.indexOf('95% OFF') !== -1 && firstCard.indexOf('High Discount Number MRP Dal 1 kg') !== -1);
 
   console.log('\n' + (fail ? 'FAIL: ' + fail + ' check(s) failed, ' + pass + ' passed' : 'PASS: all ' + pass + ' checks passed (70 items -> 70 cards)'));
   process.exit(fail ? 1 : 0);
