@@ -32,7 +32,7 @@
   const KWG = (id, name, kws) => ({ id, name, subs: kws.map(k => [k, k[0].toUpperCase() + k.slice(1)]) });
 
   // ───────────────────────── Catalogue ─────────────────────────
-  // Category nodes are the Nov 2026 tez/browse catalogue (87 browse aisles + keyword
+  // Category nodes are the Nov 2026 tez/browse catalogue (98 browse aisles + keyword
   // groups below). Node IDs are Amazon Now browse nodes; only the Ice Cream Store
   // node uses the merch endpoint, the rest use category.
   const GROUPS = [
