@@ -34,7 +34,7 @@ module.exports = {
   async fetchPage(job, page, ctx) {
     const { env, fetch, sleep } = ctx;
     const offset = (page - 1) * 10;
-    if (offset >= 30) return [];
+    if (offset >= 50) return [];   // 5 pages x 10, matching the browser and PAGES 1-5
     const [code] = job.sub, bid = encodeURIComponent(env.AMAZON_BRAND_ID);
     const url = /^\d+$/.test(code)
       ? 'https://www.amazon.in/tez/browse/' + (job.g.merch ? 'merch' : 'category') + '?nodeId=' + code + '&brandId=' + bid + '&offset=' + offset
