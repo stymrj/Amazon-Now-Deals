@@ -2,7 +2,7 @@
 
 Scans the Amazon Now categories and keywords you pick and shows the biggest discounts, then the best deals of each group. It runs in your own browser as a bookmarklet or userscript. Nothing is uploaded and there is no account.
 
-**Live page:** http://satyamraj.in/Amazon-Now-Deals/
+**Live page:** https://satyamraj.in/Amazon-Now-Deals/
 
 ## What's new in v2 (2026-11-08)
 
@@ -40,9 +40,9 @@ The browser tool already had what a plain deal list doesn't, and v2 keeps all of
 
 ## Install
 
-![Install walkthrough](http://satyamraj.in/PriceDrop-Hunter/media/install-demo.gif)
+![Install walkthrough](https://satyamraj.in/PriceDrop-Hunter/media/install-demo.gif)
 
-[Watch the walkthrough video (MP4)](http://satyamraj.in/PriceDrop-Hunter/media/install-demo.mp4)
+[Watch the walkthrough video (MP4)](https://satyamraj.in/PriceDrop-Hunter/media/install-demo.mp4)
 
 **Bookmarklet (desktop).** Run `node build.js`, open `index.html`, and drag the **Amazon Now Deals** button to your bookmarks bar. Open amazon.in and click the bookmark.
 
