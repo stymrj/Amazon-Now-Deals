@@ -112,18 +112,21 @@ async function run(platform, argv = process.argv.slice(2)) {
   const found = new Map();
   let failed = 0, blocked = '';
   const ctx = { env, fetch, sleep, price, brandOf };
+  const pageSize = platform.pageSize || 10;
   await pool(jobs, +env.MAX_WORKERS || platform.workers || 4, async job => {
+    let offset = 0;
     for (let page = 1; page <= pages && !blocked; page++) {
       let items;
-      try { items = await platform.fetchPage(job, page, ctx); }
+      try { items = await platform.fetchPage(job, page, ctx, offset); }
       catch (e) {
         if (e.blocked) blocked = e.message; else { failed++; console.log(`  ! ${job.g.name} › ${job.sub[1]}: ${e.message}`); }
         return;
       }
       for (const p of items) { if (!found.has(p.id) || job.min < found.get(p.id).min) found.set(p.id, Object.assign(p, { min: job.min })); }
-      if (items.more === false || !items.length) break;
+      if (items.more === false || (!items.length && items.more !== true)) break;
+      offset = items.nextOffset ?? offset + pageSize;
       // Only stores that return results sorted by discount can stop early.
-      if (platform.sortedByDiscount && (items.length < (platform.pageSize || 10) || items[items.length - 1].disc < job.min)) break;
+      if (platform.sortedByDiscount && items.length && (items.length < pageSize || items[items.length - 1].disc < job.min)) break;
     }
   });
   if (blocked) console.error('Stopped: ' + blocked);
