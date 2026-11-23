@@ -2,7 +2,7 @@
 
 ## Unreleased
 - Browser and Telegram bot scans follow Amazon's next-page offset, even when an intermediate page has no products.
-- Browser scans show the actual error after Amazon throttles or returns a server error, including when only some categories failed.
+- Browser scans show every distinct failure reason and count repeated failures, even when some categories still return deals.
 - Dragging the scan depth, minimum discount, and maximum price sliders no longer rebuilds the controls on each input.
 
 ## v2.0.0 — 2026-11-08

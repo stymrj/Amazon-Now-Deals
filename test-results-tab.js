@@ -25,7 +25,7 @@ const head = src.slice(src.indexOf('(function () {'), end);
 const delays = [];
 const lib = (setTimeout => eval(head + `
 var store = { brandId: 'TESTBRAND1', lat: '28.61', lon: '77.20', groups: [] };
-return { extract, normalise, price, first, guessBrand, classifyFetchError, pageResult, extractFromSearchHtml, selfTest, toCSV, fetchPage };
+return { extract, normalise, price, first, guessBrand, classifyFetchError, pageResult, extractFromSearchHtml, selfTest, toCSV, fetchPage, esc };
 })();`))((fn, ms) => { delays.push(ms); fn(); });
 
 // ---- grab unitOf (+ its UNITS table) from the Filtering section ----
@@ -109,13 +109,17 @@ function renderCards(products) {
     offsets.push(new URL(url).searchParams.get('offset'));
     return nextPages.shift();
   };
-  const scanStore = { depth: 5 };
-  const scanState = { products: new Map() };
+  const scanStore = { depth: 5, favs: [] };
+  const scanState = { products: new Map(), fetchErrors: new Map(), tab: 'best' };
+  const scanJobs = [kwJob];
   const toasts = [];
   const runScan = new Function('P', 'store', 'S', 'OFFSITE', 'render', 'scheduleRender', 'ingest', 'recordPrices', 'save', 'notify', 'toast', 'rq',
     'return async ' + grabFn('scan'))(
-    { jobs: () => [kwJob], fetchPage: lib.fetchPage }, scanStore, scanState,
-    false, () => {}, () => {}, () => 0, () => {}, () => {}, () => {}, msg => toasts.push(msg), 0);
+    { jobs: () => scanJobs, fetchPage: lib.fetchPage }, scanStore, scanState,
+    false, () => {}, () => {}, products => {
+      for (const p of products) scanState.products.set(p.id, p);
+      return products.length;
+    }, () => {}, () => {}, () => {}, msg => toasts.push(msg), 0);
   await runScan();
   check('browser scan follows cursor across empty pages and stops on hasMoreWidgets=false', offsets.join() === '0,24,31', offsets.join());
   // 5b. tez empty on page 1 -> /s HTML fallback returns cards (sponsored skipped).
@@ -149,10 +153,26 @@ function renderCards(products) {
     delays.length = 0;
     global.window.fetch = async () => { calls++; return resp({ status }); };
     await runScan();
+    const [error] = scanState.fetchErrors.keys();
     check('HTTP ' + status + ' exhausts four attempts and reaches the scan message', calls === 4
-      && delays.join() === '4000,8000,12000' && scanState.errors === 1 && scanState.fetchErrors[0]?.includes(status)
-      && toasts.at(-1) === scanState.fetchErrors[0]);
+      && delays.join() === '4000,8000,12000' && scanState.errors === 1 && error?.includes(status)
+      && toasts.at(-1) === error);
   }
+
+  const jobResponses = {
+    diwali: resp({ json: { data: { ...fixture.data, metadata: { hasMoreWidgets: false } } } }),
+    chocolate: resp({ status: 403 }), coffee: resp({ status: 204 }), tea: resp({ status: 403 })
+  };
+  for (const q of ['chocolate', 'coffee', 'tea']) scanJobs.push({ ...kwJob, q });
+  global.window.fetch = async url => jobResponses[new URL(url).searchParams.get('keyword')];
+  await runScan();
+  const mixedResults = new Function('S', 'store', 'OFFSITE', 'filtered', 'bestView', 'esc',
+    grabFn('scanStatus') + '\n' + grabFn('mainView') + '\nreturn mainView();')(
+    scanState, scanStore, false, () => [], () => 'Deals visible', lib.esc);
+  const [refused, noData] = [403, 204].map(status => lib.classifyFetchError(status, ''));
+  check('mixed scan keeps results and lists each fetch problem once, counting repeats', mixedResults.includes('Deals visible')
+    && mixedResults.includes('3 categories failed') && mixedResults.includes(refused + ' (×2)')
+    && mixedResults.includes(noData) && mixedResults.split(refused).length === 2 && mixedResults.split(noData).length === 2);
 
   console.log('== 6. range controls keep the active input in place ==');
   const handlers = {}, labels = { depthv: {}, minDiscv: {}, maxPricev: {} }, rangeStore = {};

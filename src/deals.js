@@ -257,7 +257,7 @@
 
   // ───────────────────────── State ─────────────────────────
   const S = { products: new Map(), scanning: false, done: 0, total: 0, errors: 0, ctl: { stop: false },
-    q: '', brand: '', cat: '', preset: '', pick: false, tgm: false, favOnly: false, newOnly: false, shown: 60, tab: 'best', panel: false, startedAt: 0, fetched: 0, fetchErrors: [], tried: false };
+    q: '', brand: '', cat: '', preset: '', pick: false, tgm: false, favOnly: false, newOnly: false, shown: 60, tab: 'best', panel: false, startedAt: 0, fetched: 0, fetchErrors: new Map(), tried: false };
 
   // ───────────────────────── Scanner ─────────────────────────
   async function scan() {
@@ -266,7 +266,7 @@
     if (typeof captureUI === 'function') { autoScroll(); return; }
     const jobs = P.jobs(store);
     if (!jobs.length) { toast('Pick at least one category'); return; }
-    S.scanning = true; S.ctl = { stop: false }; S.done = 0; S.errors = 0; S.fetched = 0; S.fetchErrors = []; S.total = jobs.length; S.startedAt = Date.now();
+    S.scanning = true; S.ctl = { stop: false }; S.done = 0; S.errors = 0; S.fetched = 0; S.fetchErrors.clear(); S.total = jobs.length; S.startedAt = Date.now();
     S.products.clear(); S.shown = 60; render();
     const ctl = S.ctl, queue = jobs.slice();
     const runJob = async job => {
@@ -277,7 +277,7 @@
           S.fetched += items.length;
           if (items.error) {
             S.errors++;
-            if (!S.fetchErrors.includes(items.error)) S.fetchErrors.push(items.error);
+            S.fetchErrors.set(items.error, (S.fetchErrors.get(items.error) || 0) + 1);
           }
           const fresh = ingest(items);
           scheduleRender();
@@ -297,7 +297,7 @@
     recordPrices();
     store.lastScan = Date.now(); save(); render();
     notify();
-    if (!ctl.stop && !S.products.size && S.fetchErrors.length) { toast(S.fetchErrors[0]); return; }
+    if (!ctl.stop && !S.products.size && S.fetchErrors.size === 1) { toast(S.fetchErrors.keys().next().value); return; }
     toast(ctl.stop ? 'Scan stopped' : `Scan complete · ${S.products.size} products` + (S.errors ? ` · ${S.errors} failed` : ''));
   }
 
@@ -686,9 +686,9 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
     return `<div class="check"><h3>Open ${esc(PLATFORM)} to see live deals</h3><p class="note" style="font-size:14px">PriceDrop Hunter reads live prices inside your own ${esc(PLATFORM)} tab, so it can only fetch deals there.</p><p class="note" style="font-size:14px;margin-top:8px"><b>Userscript installed?</b> Hunter opens by itself on the store. <b>Using the bookmark?</b> After the store opens, tap your PriceDrop Hunter bookmark again on that page.</p><a class="btn" href="${STORE_URL}#pricedrop" target="_blank" rel="noopener" style="margin-top:16px;text-decoration:none">${ic('ext')}Open ${esc(PLATFORM)}</a></div>`;
   }
   function scanStatus() {
-    const err = S.fetchErrors[0];
+    const reasons = [...S.fetchErrors].map(([reason, count]) => esc(reason) + (count > 1 ? ` (×${count})` : ''));
     const result = S.products.size ? `; ${S.errors} ${S.errors === 1 ? 'category failed' : 'categories failed'}.` : ' and showed none.';
-    return `<p class="note" style="background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px">Last scan fetched <b>${S.fetched} product${S.fetched === 1 ? '' : 's'}</b>${result}${err ? `<br><b>Fetch problem:</b> ${esc(err)}` : '<br>Nothing matched, or every category came back empty — try fewer categories, a lower minimum discount, or scan again in a few minutes.'}</p>`;
+    return `<p class="note" style="background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px">Last scan fetched <b>${S.fetched} product${S.fetched === 1 ? '' : 's'}</b>${result}${reasons.length ? `<br><b>Fetch problem${reasons.length === 1 ? '' : 's'}:</b><br>${reasons.join('<br>')}` : '<br>Nothing matched, or every category came back empty — try fewer categories, a lower minimum discount, or scan again in a few minutes.'}</p>`;
   }
   function checklist() {
     const capture = typeof captureUI === 'function';
@@ -747,7 +747,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
    ${list.length > S.shown ? `<div style="text-align:center;margin-top:24px"><button class="btn ghost" data-act="more">Show more (${list.length - S.shown} left)</button></div>` : ''}`
         : `<div class="empty"><span class="ei">${ic(S.tab === 'saved' ? 'heart' : 'tag', 26)}</span><b>${S.tab === 'saved' ? 'Nothing saved yet' : 'Nothing matches'}</b>${S.tab === 'saved' ? 'Tap the heart on any deal to keep an eye on it.' : 'Try another category or a lower minimum discount.'}</div>`);
     }
-    return `<main id="main">${head}${!S.scanning && S.fetchErrors.length ? scanStatus() : ''}${body}</main>`;
+    return `<main id="main">${head}${!S.scanning && S.fetchErrors.size ? scanStatus() : ''}${body}</main>`;
   }
   function drawer() {
     const items = Object.entries(store.list).map(([id, q]) => [S.products.get(id) || store._cache && store._cache[id], q]).filter(x => x[0]);
