@@ -22,10 +22,11 @@ global.sessionStorage = { getItem: () => null, setItem: () => {} };
 const end = src.indexOf('  // Live data can only be read');
 if (end < 0) throw new Error('slice anchor missing in src/deals.js');
 const head = src.slice(src.indexOf('(function () {'), end);
-const lib = eval(head + `
+const delays = [];
+const lib = (setTimeout => eval(head + `
 var store = { brandId: 'TESTBRAND1', lat: '28.61', lon: '77.20', groups: [] };
 return { extract, normalise, price, first, guessBrand, classifyFetchError, pageResult, extractFromSearchHtml, selfTest, toCSV, fetchPage };
-})();`);
+})();`))((fn, ms) => { delays.push(ms); fn(); });
 
 // ---- grab unitOf (+ its UNITS table) from the Filtering section ----
 function grabFn(name) {
@@ -101,6 +102,22 @@ function renderCards(products) {
   global.window.fetch = async () => resp({ json: fixture });
   let r = await lib.fetchPage(kwJob, 1, { stop: false });
   check('tez page: 70 items, more=true from metadata', r.length === 70 && r.more === true, 'len ' + r.length + ' more ' + r.more);
+  const offsets = [];
+  const cursorPage = (nextOffset, hasMoreWidgets) => resp({ json: { data: { widgets: [], metadata: { nextOffset, hasMoreWidgets } } } });
+  const nextPages = [cursorPage(24, true), cursorPage('31'), cursorPage(31, false)];
+  global.window.fetch = async url => {
+    offsets.push(new URL(url).searchParams.get('offset'));
+    return nextPages.shift();
+  };
+  const scanStore = { depth: 5 };
+  const scanState = { products: new Map() };
+  const toasts = [];
+  const runScan = new Function('P', 'store', 'S', 'OFFSITE', 'render', 'scheduleRender', 'ingest', 'recordPrices', 'save', 'notify', 'toast', 'rq',
+    'return async ' + grabFn('scan'))(
+    { jobs: () => [kwJob], fetchPage: lib.fetchPage }, scanStore, scanState,
+    false, () => {}, () => {}, () => 0, () => {}, () => {}, () => {}, msg => toasts.push(msg), 0);
+  await runScan();
+  check('browser scan follows cursor across empty pages and stops on hasMoreWidgets=false', offsets.join() === '0,24,31', offsets.join());
   // 5b. tez empty on page 1 -> /s HTML fallback returns cards (sponsored skipped).
   const html = '<div data-asin="B0FB000001" data-component-type="s-search-result"><h2><a><span>Diwali Diya Set</span></a></h2><span data-csa-c-price-to-pay="99" data-csa-c-strike-through-price="329"></span><img class="s-image" src="https://example.com/d1.jpg"></div>'
     + '<div data-asin="B0FB000002"><h2><a><span>Sponsored Diya</span></a></h2><span class="puis-sponsored-label-text">Sponsored</span><span data-csa-c-price-to-pay="10" data-csa-c-strike-through-price="20"></span></div>'
@@ -126,6 +143,32 @@ function renderCards(products) {
     : resp({ json: { data: { widgets: [], metadata: { hasMoreWidgets: false } } } }));
   r = await lib.fetchPage(kwJob, 1, { stop: false });
   check('/s robot-check: error surfaced, not a blank grid', r.length === 0 && /robot/i.test(r.error || ''), 'error=' + r.error);
+
+  for (const status of [429, 503]) {
+    calls = 0;
+    delays.length = 0;
+    global.window.fetch = async () => { calls++; return resp({ status }); };
+    await runScan();
+    check('HTTP ' + status + ' exhausts four attempts and reaches the scan message', calls === 4
+      && delays.join() === '4000,8000,12000' && scanState.errors === 1 && scanState.fetchErrors[0]?.includes(status)
+      && toasts.at(-1) === scanState.fetchErrors[0]);
+  }
+
+  console.log('== 6. range controls keep the active input in place ==');
+  const handlers = {}, labels = { depthv: {}, minDiscv: {}, maxPricev: {} }, rangeStore = {};
+  let renders = 0;
+  const rangeState = { shown: 120 };
+  const eventCode = src.slice(src.indexOf("  root.addEventListener('input'"), src.indexOf("  root.addEventListener('click'"));
+  new Function('root', 'S', 'P', 'store', 'save', 'render', '$inr', eventCode)(
+    { addEventListener: (name, fn) => { handlers[name] = fn; }, getElementById: id => labels[id] },
+    rangeState, { locInput: () => false }, rangeStore, () => {}, () => { renders++; }, n => '₹' + n);
+  for (const [key, values, label] of [['depth', [2, 4], 4], ['minDisc', [10, 35], '35%'], ['maxPrice', [100, 200], '₹200']]) {
+    const before = renders;
+    for (const value of values) handlers.input({ target: { dataset: { in: key }, value: String(value) } });
+    check(key + ' updates while dragging without re-rendering', renders === before && rangeStore[key] === values[1] && labels[key + 'v'].textContent === label);
+    handlers.change({ target: { dataset: { in: key }, value: String(values[1]) } });
+    check(key + ' renders only if it changes deal filters', renders === before + (key === 'depth' ? 0 : 1));
+  }
 
   console.log('== 7. highest-discount fixture: 85-95% off items render, highest first ==');
   const hd = JSON.parse(fs.readFileSync(path.join(ROOT, 'fixtures/sample-high-discount.json'), 'utf8'));

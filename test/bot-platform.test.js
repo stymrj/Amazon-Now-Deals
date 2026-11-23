@@ -5,7 +5,7 @@ const path = require('path');
 const platform = require(path.join(__dirname, '..', 'bot', 'platform.js'));
 // The production price() from bot/core.js (the ctx the bot actually runs
 // with) — the test must exercise the real function, not a copy of it.
-const { price } = require(path.join(__dirname, '..', 'bot', 'core.js'));
+const { price, run } = require(path.join(__dirname, '..', 'bot', 'core.js'));
 let pass = 0, fail = 0;
 function check(name, ok, extra) {
   if (ok) { pass++; console.log('  ok - ' + name); }
@@ -76,6 +76,33 @@ const kwJob = { g: { name: 'Grocery (search)' }, sub: ['dal', 'Dal'] };
   check('bot max-only prices: disc 90%', (edgeById.B0HD000004 || {}).disc === 90);
   check('bot value-keyed prices: disc 88%', (edgeById.B0HD000005 || {}).disc === 88);
   check('bot fraction savings 0.9: disc 90%', (edgeById.B0HD000010 || {}).disc === 90);
+
+  const offsets = [];
+  const settings = { AMAZON_COOKIE: 'test', AMAZON_BRAND_ID: 'test', GROUPS: 'icecream', PAGES: '5' };
+  const previous = Object.fromEntries(Object.keys(settings).map(k => [k, process.env[k]]));
+  const log = console.log;
+  try {
+    Object.assign(process.env, settings);
+    console.log = () => {};
+    const testPlatform = { ...platform,
+      fetchPage: (job, page, context, offset) => platform.fetchPage(job, page, { ...context, sleep: async () => {} }, offset),
+      fetch: async url => {
+        offsets.push(new URL(url).searchParams.get('offset'));
+        return resp({ json: { data: { widgets: [], metadata: [
+          { nextOffset: '18', hasMoreWidgets: true },
+          { nextOffset: 18, hasMoreWidgets: true },
+          { nextOffset: 38, hasMoreWidgets: false }
+        ][offsets.length - 1] } } });
+      }
+    };
+    await run(testPlatform, ['--json']);
+  } finally {
+    console.log = log;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+  check('bot follows cursor across empty pages, advances past repeated offsets, stops on hasMoreWidgets=false', offsets.join() === '0,18,28', offsets.join());
 
   console.log('\n' + (fail ? 'FAIL: ' + fail + ' check(s) failed, ' + pass + ' passed' : 'PASS: all ' + pass + ' checks passed'));
   process.exit(fail ? 1 : 0);

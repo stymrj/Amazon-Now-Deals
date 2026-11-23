@@ -56,11 +56,6 @@
     KWG('home', 'Home (search)', ['detergent', 'dishwash', 'cleaner', 'tissue']),
     KWG('tech', 'Electronics (search)', ['charger', 'earphones', 'cable', 'power bank'])
   ];
-  let noLoc = false;
-  // Nov 2026 blank-results fix: a fetch that returns no data must say why (sign-in,
-  // robot check, 503) instead of opening an empty grid. The last such message is
-  // kept here and shown in the empty state after a scan.
-  let lastFetchError = '';
   function pageResult(items, more, error) { items.more = more; if (error) items.error = error; return items; }
   function classifyFetchError(status, ct) {
     if (status === 503) return 'Amazon returned a 503 / rush-hour error page instead of search results. Wait a few minutes and retry from a normal browser tab.';
@@ -111,54 +106,50 @@
     })(root, 0);
     return out;
   }
-  async function fetchPage(job, page, ctl) {
+  async function fetchPage(job, page, ctl, offset = (page - 1) * 10) {
     const bid = brandId();
     if (!bid) {
-      noLoc = true;
-      lastFetchError = 'No Brand ID found. Open amazon.in/tez/browse/home so your Amazon Now address and brand ID are set, then scan again.';
-      return pageResult([], false, lastFetchError);
+      return pageResult([], false, 'No Brand ID found. Open amazon.in/tez/browse/home so your Amazon Now address and brand ID are set, then scan again.');
     }
-    const offset = (page - 1) * 10;
-    if (offset >= 50) return pageResult([], false);
     const url = job.kind === 'kw'
       ? 'https://www.amazon.in/tez/browse/searchByKeyword?keyword=' + encodeURIComponent(job.q) + '&brandId=' + encodeURIComponent(bid) + '&offset=' + offset + '&spellCorrectionDisabled=false'
       : 'https://www.amazon.in/tez/browse/' + ((job.merch || job.g.merch) ? 'merch' : 'category') + '?nodeId=' + job.node + '&brandId=' + encodeURIComponent(bid) + '&offset=' + offset;
-    let lastErr;
     for (let a = 0; a < 4; a++) {
       if (ctl.stop) throw new Error('stopped');
       try {
         const r = await W.fetch(url, { credentials: 'include' });
-        if (r.status === 429 || r.status === 503) { await sleep(4000 * (a + 1)); continue; }
-        if (r.status >= 500) { await sleep(2000 * (a + 1)); continue; }
+        if (r.status === 429 || r.status >= 500) {
+          if (a === 3) return pageResult([], false, classifyFetchError(r.status, ''));
+          await sleep((r.status === 429 || r.status === 503 ? 4000 : 2000) * (a + 1));
+          continue;
+        }
         // Signed out or no Amazon Now location: Amazon answers 204, or a sign-in /
         // robot-check page instead of data. Surface that instead of a blank grid.
         if (!r.ok || r.status === 204 || (r.headers.get('content-type') || '').indexOf('json') < 0) {
-          noLoc = true;
-          lastFetchError = classifyFetchError(r.status, r.headers.get('content-type') || '');
-          return pageResult([], false, lastFetchError);
+          return pageResult([], false, classifyFetchError(r.status, r.headers.get('content-type') || ''));
         }
         const data = await r.json();
         const items = extract(data, job.g.name + ' › ' + job.name);
+        const meta = data && data.data && data.data.metadata;
+        const next = Number(meta?.nextOffset);
+        const nextOffset = Number.isSafeInteger(next) && next > offset ? next : undefined;
+        const more = meta?.hasMoreWidgets ?? (nextOffset !== undefined || items.length >= 10);
         // Fallback shape: tez JSON empty for a keyword search — retry once against
         // the /s global search page and parse its cards instead of showing nothing.
-        if (job.kind === 'kw' && page === 1 && !items.length) {
+        if (job.kind === 'kw' && page === 1 && !items.length && !more) {
           try {
             const hr = await W.fetch('https://www.amazon.in/s?i=amazontez&k=' + encodeURIComponent(job.q) + '&s=pct-off-with-tax&dc', { credentials: 'include' });
             if (hr.ok) {
               const fb = extractFromSearchHtml(await hr.text(), job.g.name + ' › ' + job.name);
               if (fb.items.length) return pageResult(fb.items, false);
-              if (fb.error) { lastFetchError = fb.error; return pageResult([], false, fb.error); }
+              if (fb.error) return pageResult([], false, fb.error);
             }
           } catch (e) { /* fallback is best-effort; keep the empty tez result */ }
         }
-        // tez/browse paging lives in data.metadata: hasMoreWidgets / nextOffset.
-        const meta = data && data.data && data.data.metadata;
-        const more = meta && meta.hasMoreWidgets !== undefined ? !!meta.hasMoreWidgets : items.length >= 10;
-        return pageResult(items, more);
-      } catch (e) { lastErr = e; await sleep(700 * (a + 1)); }
+        return Object.assign(pageResult(items, !!more), { nextOffset });
+      } catch (e) { if (a < 3) await sleep(700 * (a + 1)); }
     }
-    lastFetchError = (lastErr && lastErr.message) || 'rate limited';
-    throw lastErr || new Error('rate limited');
+    return pageResult([], false, 'Could not read deal data from Amazon. Check your connection and try again.');
   }
   const P = {
     key: 'anr_v1', hostRe: /(^|\.)amazon\.in$/,
@@ -172,9 +163,6 @@
       return jobs;
     },
     fetchPage,
-    noLocation: () => noLoc,
-    lastError: () => lastFetchError,
-    noLocMsg: 'No results. Sign in to Amazon, open amazon.in/tez/browse/home so your Amazon Now address and brand ID are set, then scan again.',
     locCheck: () => brandId() ? true : null,
     locUI: (st, e) => `<label class="row" style="margin-bottom:8px"><span>Brand ID</span><input class="fld" style="width:150px" data-in="brandId" placeholder="auto-detect" value="${e(st.brandId)}"></label>`,
     locInput: (k, v) => { if (k === 'brandId') { store.brandId = v.trim().slice(0, 64); save(); return true; } return false; }
@@ -283,14 +271,19 @@
     const ctl = S.ctl, queue = jobs.slice();
     const runJob = async job => {
       try {
+        let offset = 0;
         for (let page = 1; page <= store.depth && !ctl.stop; page++) {
-          const items = await P.fetchPage(job, page, ctl);
+          const items = await P.fetchPage(job, page, ctl, offset);
           S.fetched += items.length;
-          if (items.error && !S.fetchErrors.includes(items.error)) S.fetchErrors.push(items.error);
+          if (items.error) {
+            S.errors++;
+            if (!S.fetchErrors.includes(items.error)) S.fetchErrors.push(items.error);
+          }
           const fresh = ingest(items);
           scheduleRender();
           // Stop on the last page, or when a page adds nothing and does not promise more.
           if (items.more === false || (!fresh && items.more !== true)) break;
+          offset = items.nextOffset ?? offset + 10;
         }
       } catch (e) { if (!ctl.stop) S.errors++; }
       S.done++; scheduleRender();
@@ -299,11 +292,12 @@
     if (queue.length) await runJob(queue.shift());
     const worker = async () => { while (queue.length && !ctl.stop) await runJob(queue.shift()); };
     await Promise.all(Array.from({ length: (typeof P !== 'undefined' && P.workers) || 4 }, worker));
+    if (rq) { clearTimeout(rq); rq = 0; }
     S.scanning = false; S.tried = true;
     recordPrices();
     store.lastScan = Date.now(); save(); render();
     notify();
-    if (P.noLocation() && !S.products.size) { toast(S.fetchErrors[0] || P.noLocMsg); return; }
+    if (!ctl.stop && !S.products.size && S.fetchErrors.length) { toast(S.fetchErrors[0]); return; }
     toast(ctl.stop ? 'Scan stopped' : `Scan complete · ${S.products.size} products` + (S.errors ? ` · ${S.errors} failed` : ''));
   }
 
@@ -630,7 +624,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
  <div class="ph"><div><b>What should Hunter scan?</b><small>${esc(PLATFORM)} · pick one or more categories</small></div><button class="ib soft" data-act="pclose" title="Close">${ic('x')}</button></div>
  <div class="pb"><div class="chips">${GROUPS.map(groupChip).join('')}</div>
   <div class="row" style="margin-top:12px;justify-content:flex-start;gap:6px"><button class="chip" data-act="all">Select all</button><button class="chip" data-act="none">Clear</button></div>
-  <label class="row" style="margin-top:20px"><span>Pages per category</span><b>${store.depth}</b></label><input type="range" min="1" max="5" value="${store.depth}" data-in="depth">
+  <label class="row" for="depth" style="margin-top:20px"><span>Pages per category</span><b id="depthv">${store.depth}</b></label><input id="depth" type="range" min="1" max="5" value="${store.depth}" data-in="depth">
   <p class="note" style="margin-top:4px">More pages find more deals but take longer.</p></div>
  <div class="pf"><button class="btn ghost" data-act="pclose">Cancel</button><button class="btn" data-act="pstart" ${n ? '' : 'disabled'}>${ic('scan')}Scan ${n} ${n === 1 ? 'category' : 'categories'}</button></div></div>`;
   }
@@ -670,8 +664,8 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
  <div class="mob" style="gap:8px;flex-wrap:wrap"><button class="chip" data-act="theme">${ic('moon', 14)}Theme</button><button class="chip" data-act="tgopen">${ic('send', 14)}Telegram ${store.tg.on && tgReady() ? 'on' : 'off'}</button><button class="chip" data-act="side">${ic('x', 14)}Close menu</button></div>
  ${typeof captureUI === 'function' && !OFFSITE ? captureUI() : scanUI()}
  <div><h4>${ic('sliders', 15)}Filters</h4>
-  <label class="row"><span>Min discount</span><b>${store.minDisc}%</b></label><input type="range" min="0" max="90" step="5" value="${store.minDisc}" data-in="minDisc">
-  <label class="row" style="margin-top:14px"><span>Max price</span><b>${store.maxPrice ? $inr(store.maxPrice) : 'Any'}</b></label><input type="range" min="0" max="2000" step="50" value="${store.maxPrice}" data-in="maxPrice">
+  <label class="row" for="minDisc"><span>Min discount</span><b id="minDiscv">${store.minDisc}%</b></label><input id="minDisc" type="range" min="0" max="90" step="5" value="${store.minDisc}" data-in="minDisc">
+  <label class="row" for="maxPrice" style="margin-top:14px"><span>Max price</span><b id="maxPricev">${store.maxPrice ? $inr(store.maxPrice) : 'Any'}</b></label><input id="maxPrice" type="range" min="0" max="2000" step="50" value="${store.maxPrice}" data-in="maxPrice">
   <label class="sw" style="margin-top:16px"><input type="checkbox" data-in="stockOnly" ${store.stockOnly ? 'checked' : ''}> In stock only</label>
   <label class="sw" style="margin-top:10px"><input type="checkbox" data-in="favOnly" ${S.favOnly ? 'checked' : ''}> Saved only</label>
   <label class="sw" style="margin-top:10px"><input type="checkbox" data-in="newOnly" ${S.newOnly ? 'checked' : ''}> New or price dropped</label></div>
@@ -693,7 +687,8 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
   }
   function scanStatus() {
     const err = S.fetchErrors[0];
-    return `<p class="note" style="background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px">Last scan fetched <b>${S.fetched} product${S.fetched === 1 ? '' : 's'}</b> and showed none.${err ? `<br><b>Fetch problem:</b> ${esc(err)}` : '<br>Nothing matched, or every category came back empty — try fewer categories, a lower minimum discount, or scan again in a few minutes.'}</p>`;
+    const result = S.products.size ? `; ${S.errors} ${S.errors === 1 ? 'category failed' : 'categories failed'}.` : ' and showed none.';
+    return `<p class="note" style="background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px">Last scan fetched <b>${S.fetched} product${S.fetched === 1 ? '' : 's'}</b>${result}${err ? `<br><b>Fetch problem:</b> ${esc(err)}` : '<br>Nothing matched, or every category came back empty — try fewer categories, a lower minimum discount, or scan again in a few minutes.'}</p>`;
   }
   function checklist() {
     const capture = typeof captureUI === 'function';
@@ -752,7 +747,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
    ${list.length > S.shown ? `<div style="text-align:center;margin-top:24px"><button class="btn ghost" data-act="more">Show more (${list.length - S.shown} left)</button></div>` : ''}`
         : `<div class="empty"><span class="ei">${ic(S.tab === 'saved' ? 'heart' : 'tag', 26)}</span><b>${S.tab === 'saved' ? 'Nothing saved yet' : 'Nothing matches'}</b>${S.tab === 'saved' ? 'Tap the heart on any deal to keep an eye on it.' : 'Try another category or a lower minimum discount.'}</div>`);
     }
-    return `<main id="main">${head}${body}</main>`;
+    return `<main id="main">${head}${!S.scanning && S.fetchErrors.length ? scanStatus() : ''}${body}</main>`;
   }
   function drawer() {
     const items = Object.entries(store.list).map(([id, q]) => [S.products.get(id) || store._cache && store._cache[id], q]).filter(x => x[0]);
@@ -873,7 +868,12 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
     if (P.locInput(k, e.target.value)) return;
     if (k === 'tgToken' || k === 'tgChat') { store.tg[k === 'tgToken' ? 'token' : 'chat'] = e.target.value.trim(); save(); return; }
     if (k === 'tgMin') { store.tg.minDisc = +e.target.value; save(); const b = root.getElementById('tgminv'); if (b) b.textContent = store.tg.minDisc + '% off'; return; }
-    if (k === 'depth' || k === 'minDisc' || k === 'maxPrice') { store[k] = +e.target.value; save(); S.shown = 60; render(); return; }
+    if (k === 'depth' || k === 'minDisc' || k === 'maxPrice') {
+      const value = store[k] = +e.target.value;
+      const label = root.getElementById(k + 'v');
+      if (label) label.textContent = k === 'depth' ? value : k === 'minDisc' ? value + '%' : value ? $inr(value) : 'Any';
+      save();
+    }
   });
   root.addEventListener('change', e => {
     const k = e.target.dataset && e.target.dataset.in; if (!k) return;
@@ -883,6 +883,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
       if (k === 'tgOn' && v && !tgReady()) toast('Add your bot token and chat ID too');
       return;
     }
+    if (k === 'minDisc' || k === 'maxPrice') { S.shown = 60; render(); return; }
     if (k === 'stockOnly') { store.stockOnly = v; save(); }
     else if (k === 'sort') { store.sort = v; save(); }
     else if (k === 'favOnly') S.favOnly = v; else if (k === 'newOnly') S.newOnly = v;

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- Browser and Telegram bot scans follow Amazon's next-page offset, even when an intermediate page has no products.
+- Browser scans show the actual error after Amazon throttles or returns a server error, including when only some categories failed.
+- Dragging the scan depth, minimum discount, and maximum price sliders no longer rebuilds the controls on each input.
+
 ## v2.0.0 — 2026-11-08
 - Fixed (2026-11-09): install button now reads “Amazon Now Deals” instead of the generic “PriceDrop Hunter”, so the dragged bookmark is named after this store instead of colliding with every other tool.
 - Fixed (2026-11-09): highest-discount items are fetched again — the parser now reads MRP as a string (`"₹999"`) or plain number, prices keyed `value` / `max` / `text` instead of only `amount`, and savings percents as strings, floats or 0–1 fractions. Those shapes used to parse to 0% off (or drop the item entirely), so the 30% minimum-discount filter hid genuine 85–95% off deals. Same fix in the Telegram bot path (`bot/core.js` price, `bot/platform.js` normalise); covered by `fixtures/sample-high-discount.json`, section 7 of `test-results-tab.js`, and `test/bot-platform.test.js`.

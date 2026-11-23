@@ -31,10 +31,8 @@ module.exports = {
   required: ['AMAZON_COOKIE', 'AMAZON_BRAND_ID'],
   workers: 3,
   pageSize: 10,
-  async fetchPage(job, page, ctx) {
+  async fetchPage(job, page, ctx, offset = (page - 1) * 10) {
     const { env, fetch, sleep } = ctx;
-    const offset = (page - 1) * 10;
-    if (offset >= 50) return [];   // 5 pages x 10, matching the browser and PAGES 1-5
     const [code] = job.sub, bid = encodeURIComponent(env.AMAZON_BRAND_ID);
     const url = /^\d+$/.test(code)
       ? 'https://www.amazon.in/tez/browse/' + (job.g.merch ? 'merch' : 'category') + '?nodeId=' + code + '&brandId=' + bid + '&offset=' + offset
@@ -51,7 +49,9 @@ module.exports = {
       const items = extract(data, job.g.name + ' › ' + job.sub[1], ctx);
       // tez/browse paging lives in data.metadata: hasMoreWidgets / nextOffset.
       const meta = data && data.data && data.data.metadata;
-      items.more = meta && meta.hasMoreWidgets !== undefined ? !!meta.hasMoreWidgets : items.length >= 10;
+      const next = Number(meta?.nextOffset);
+      items.nextOffset = Number.isSafeInteger(next) && next > offset ? next : undefined;
+      items.more = !!(meta?.hasMoreWidgets ?? (items.nextOffset !== undefined || items.length >= 10));
       return items;
     }
     throw new Error('rate limited');

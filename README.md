@@ -10,7 +10,7 @@ Scans the Amazon Now categories and keywords you pick and shows the biggest disc
 - **Blank-results fix:** a scan that fetches nothing now says why instead of showing an empty grid — signed out / no Brand ID, robot check, Amazon 503 rush-hour page, or rate limit. The empty state shows how many products the last scan fetched and the exact fetch problem.
 - **Second fetch shape:** when the `tez/browse` JSON endpoint returns nothing for a keyword, the scan retries once against the Amazon Now global search page (`/s?i=amazontez`) and parses its product cards (relaxed `div[data-asin]` selector, sponsored cards skipped).
 - **Better Brand ID detection:** session storage, URL params, page links carrying `brandId`/`qcbrand`/`almBrandId`, `a-state` scripts, and page HTML — so the scan works without pasting the ID by hand.
-- **Smarter paging:** reads `data.metadata.hasMoreWidgets` / `nextOffset` from `tez/browse` instead of guessing, scans 2 pages per category by default (up to 5 in the picker), and follows up to 5 pages of results (offset 0–50).
+- **Smarter paging:** follows `data.metadata.hasMoreWidgets` and `nextOffset` from `tez/browse` when provided, scanning 2 pages per category by default (up to 5 in the picker).
 - **Highest-discount fix:** the parser now reads every price shape the API sends — MRP as a string (`"₹999"`) or plain number, prices keyed `value` / `max` / `text` instead of only `amount`, and savings percents as strings, floats or 0–1 fractions. Before, those items parsed to 0% off (or dropped entirely) and the 30% minimum-discount filter hid them, so the deepest discounts never appeared. The same fix is in the Telegram bot path. Covered by `fixtures/sample-high-discount.json` and section 7 of `node test-results-tab.js`.
 - **In-browser self-test:** a Self-test button in the sidebar runs the parser, the `/s` fallback and the error messages over built-in fixtures and reports pass/fail. Same checks run in `node test-results-tab.js`.
 - **JSON export** alongside CSV; CSV building is now a shared helper covered by the test.
@@ -101,10 +101,10 @@ Uses the `tez/browse` JSON endpoints the Amazon Now pages use (`category` / `mer
 ## Testing
 
 ```bash
-node --check src/deals.js bot/platform.js bot/core.js   # syntax
-node test-results-tab.js                                # 36 checks: 70-item fixture -> 70 cards, /s fallback, retries, diagnostics, CSV, unit price
-node test/bot-platform.test.js                          # 13 checks: bot fetch layer with stubbed fetch
 node build.js                                           # rebuilds dist/ and index.html
+node test-results-tab.js                                # browser logic with offline fixtures
+node test/bot-platform.test.js                          # bot fetching and paging with stubbed fetch
+node test-bookmark-name.js                              # store-specific bookmark label
 ```
 
 The browser tests use fixtures, not the live site: the parser, fallback, cutoff and error paths are verified offline. Live Amazon Now endpoints still need a manual browser test — sign in, scan a keyword, and confirm cards appear.
