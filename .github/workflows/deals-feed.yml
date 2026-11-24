@@ -66,6 +66,7 @@ jobs:
     steps:
       - name: Check required secrets
         id: check
+        shell: bash
         env:
           AMAZON_COOKIE: ${{ secrets.AMAZON_COOKIE }}
           AMAZON_BRAND_ID: ${{ secrets.AMAZON_BRAND_ID }}
