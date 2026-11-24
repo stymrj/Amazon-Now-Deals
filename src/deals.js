@@ -243,7 +243,7 @@
 
   const KEY = P.key;
   const defaults = Object.assign({
-    theme: 'auto', view: 'grid', sort: 'disc', minDisc: 30, maxPrice: 0, depth: 3,
+    theme: 'auto', view: 'grid', sort: 'disc', minDisc: 30, maxPrice: 0, priceBand: '', depth: 3,
     stockOnly: true, favs: [], hidden: [], list: {}, prices: {}, lastScan: 0
   }, P.defaults);
   let store;
@@ -257,7 +257,7 @@
 
   // ───────────────────────── State ─────────────────────────
   const S = { products: new Map(), scanning: false, done: 0, total: 0, errors: 0, ctl: { stop: false },
-    q: '', brand: '', cat: '', priceBand: '', unitBase: '', preset: '', pick: false, tgm: false, favOnly: false, newOnly: false, shown: 60, tab: 'best', panel: false, startedAt: 0, fetched: 0, fetchErrors: new Map(), tried: false };
+    q: '', brand: '', cat: '', unitBase: '', preset: '', pick: false, tgm: false, favOnly: false, newOnly: false, shown: 60, tab: 'best', panel: false, startedAt: 0, fetched: 0, fetchErrors: new Map(), tried: false };
 
   // ───────────────────────── Scanner ─────────────────────────
   async function scan() {
@@ -369,7 +369,7 @@
   function filtered() {
     const q = S.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const fav = new Set(store.favs), hid = new Set(store.hidden);
-    const band = PRICE_BANDS[S.priceBand];
+    const band = PRICE_BANDS[store.priceBand];
     const out = [];
     S.products.forEach(p => {
       if (hid.has(p.id)) return;
@@ -767,7 +767,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
  <div class="facet categoryrow"><span class="label" id="category-label">Category</span><div class="chips" id="categories" role="group" aria-labelledby="category-label">${chip('category', '', 'All categories', !S.cat)}${categories.map(c => chip('category', c, c, S.cat === c)).join('')}</div></div>
  <div class="refinerow">
   <div class="facet" role="group" aria-label="Minimum discount"><span class="label">Discount</span><div class="chips">${discounts.map(n => chip('discount', n, n ? n + '%+' : 'Any', store.minDisc === n)).join('')}</div></div>
-  <div class="facet" role="group" aria-label="Price band"><span class="label">Price</span><div class="chips">${chip('priceband', '', 'Any', !S.priceBand && !store.maxPrice)}${Object.entries(PRICE_BANDS).map(([id, [label]]) => chip('priceband', id, label, S.priceBand === id)).join('')}${store.maxPrice ? `<span class="count">Up to ${$inr(store.maxPrice)}</span>` : ''}</div></div>
+  <div class="facet" role="group" aria-label="Price band"><span class="label">Price</span><div class="chips">${chip('priceband', '', 'Any', !store.priceBand && !store.maxPrice)}${Object.entries(PRICE_BANDS).map(([id, [label]]) => chip('priceband', id, label, store.priceBand === id)).join('')}${store.maxPrice ? `<span class="count">Up to ${$inr(store.maxPrice)}</span>` : ''}</div></div>
  </div>
  <div class="refinerow">
   ${brands.length ? `<label class="facet"><span class="label">Brand</span><select data-in="brand">${option('', 'All brands', !S.brand)}${brands.map(b => option(b, b, S.brand === b)).join('')}</select></label>` : ''}
@@ -926,7 +926,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
     if (k === 'tgMin') { store.tg.minDisc = +e.target.value; save(); const b = root.getElementById('tgminv'); if (b) b.textContent = store.tg.minDisc + '% off'; return; }
     if (k === 'depth' || k === 'minDisc' || k === 'maxPrice') {
       const value = store[k] = +e.target.value;
-      if (k === 'maxPrice') S.priceBand = '';
+      if (k === 'maxPrice') store.priceBand = '';
       const label = root.getElementById(k + 'v');
       if (label) label.textContent = k === 'depth' ? value : k === 'minDisc' ? value + '%' : value ? $inr(value) : 'Any';
       save();
@@ -981,9 +981,10 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
       case 'preset': S.preset = S.preset === id ? '' : id; S.shown = 60; render(); break;
       case 'category': S.cat = id; S.shown = 60; render(); break;
       case 'discount': store.minDisc = +id; S.shown = 60; save(); render(); break;
-      case 'priceband': S.priceBand = id; store.maxPrice = 0; S.shown = 60; save(); render(); break;
+      case 'priceband': store.priceBand = id; store.maxPrice = 0; S.shown = 60; save(); render(); break;
       case 'resetfilters':
-        S.q = S.cat = S.brand = S.unitBase = S.priceBand = S.preset = '';
+        S.q = S.cat = S.brand = S.unitBase = S.preset = '';
+        store.priceBand = '';
         S.favOnly = S.newOnly = false; S.shown = 60;
         store.minDisc = store.maxPrice = 0; store.stockOnly = defaults.stockOnly; save(); render();
         break;
