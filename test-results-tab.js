@@ -58,12 +58,9 @@ function resp(o) {
     json: async () => o.json, text: async () => o.text
   };
 }
-// Minimal card render, mirroring the UI card(): one <article class="card"> per product.
+const renderCard = new Function('esc', 'ic', '$inr', 'spark', 'return ' + grabFn('card'))(lib.esc, () => '', n => '₹' + n, () => '');
 function renderCards(products) {
-  return products.map(p =>
-    '<article class="card"><div class="im" style="background-image:url(\'' + p.img + '\')">' +
-    '<span class="dc">' + p.disc + '% OFF</span></div><div class="inf"><a class="ti" href="' + p.url + '">' +
-    p.title + '</a><div class="pr"><b>₹' + p.price + '</b><s>₹' + p.mrp + '</s></div></div></article>').join('');
+  return products.map(p => renderCard(p, false, {})).join('');
 }
 
 (async () => {
@@ -74,7 +71,7 @@ function renderCards(products) {
   const gate = items.filter(p => p.id && p.title && p.price > 0 && p.mrp >= p.price && p.disc >= 0 && p.disc <= 100 && p.url.indexOf('https://www.amazon.in/dp/') === 0);
   check('all 70 pass the render gate (id/title/price/mrp/disc/url)', gate.length === 70, 'gated ' + gate.length);
   const cards = renderCards(gate);
-  check('70 items render as 70 cards', (cards.match(/<article class="card"/g) || []).length === 70);
+  check('70 items render as 70 cards', (cards.match(/<article class="card\b/g) || []).length === 70);
   check('string buyingPrice parsed (item 6)', items[5].price === 104, 'got ' + items[5].price);
   check('missing listPrice falls back to mrp = price (item 1)', items[0].mrp === items[0].price);
   check('discount computed from prices when savings missing (item 8)', items[7].disc === Math.round((336 - 106) / 336 * 100), 'got ' + items[7].disc);
@@ -131,7 +128,7 @@ function renderCards(products) {
     : resp({ json: { data: { widgets: [], metadata: { hasMoreWidgets: false } } } }));
   r = await lib.fetchPage(kwJob, 1, { stop: false });
   check('/s fallback: 2 cards (sponsored skipped), 70% off on first', r.length === 2 && r[0].disc === 70, 'len ' + r.length);
-  check('/s fallback cards render', (renderCards(r).match(/<article class="card"/g) || []).length === 2);
+  check('/s fallback cards render', (renderCards(r).match(/<article class="card\b/g) || []).length === 2);
   // 5c. 503 twice, then success -> retry with backoff recovers.
   let calls = 0;
   global.window.fetch = async () => { calls++; return calls <= 2 ? resp({ status: 503 }) : resp({ json: fixture }); };
@@ -166,9 +163,9 @@ function renderCards(products) {
   for (const q of ['chocolate', 'coffee', 'tea']) scanJobs.push({ ...kwJob, q });
   global.window.fetch = async url => jobResponses[new URL(url).searchParams.get('keyword')];
   await runScan();
-  const mixedResults = new Function('S', 'store', 'OFFSITE', 'filtered', 'bestView', 'esc',
+  const mixedResults = new Function('S', 'store', 'OFFSITE', 'filtered', 'bestView', 'esc', 'refinementUI',
     grabFn('scanStatus') + '\n' + grabFn('mainView') + '\nreturn mainView();')(
-    scanState, scanStore, false, () => [], () => 'Deals visible', lib.esc);
+    scanState, scanStore, false, () => [], () => 'Deals visible', lib.esc, () => '');
   const [refused, noData] = [403, 204].map(status => lib.classifyFetchError(status, ''));
   check('mixed scan keeps results and lists each fetch problem once, counting repeats', mixedResults.includes('Deals visible')
     && mixedResults.includes('3 categories failed') && mixedResults.includes(refused + ' (×2)')
@@ -190,6 +187,75 @@ function renderCards(products) {
     check(key + ' renders only if it changes deal filters', renders === before + (key === 'depth' ? 0 : 1));
   }
 
+  const filterStart = src.indexOf('  const DISCOUNT_TIERS');
+  const filterEnd = src.indexOf('  // ───────────────────────── UI', filterStart);
+  const filterSettings = { sort: 'disc', minDisc: 60, maxPrice: 0, priceBand: 'under100', favs: ['a'], hidden: [], stockOnly: true };
+  const compareDeals = [
+    { id: 'a', title: 'Toor dal', brand: 'Tata Sampann', cat: 'Staples › Dal', price: 50, disc: 70, inStock: true, unit: { base: 'kg', qty: .5 } },
+    { id: 'b', title: 'Rice', brand: 'Fortune', cat: 'Staples › Rice', price: 99, disc: 65, inStock: true, unit: { base: 'kg', qty: 2 } },
+    { id: 'c', title: 'Juice', brand: 'Paper Boat', cat: 'Drinks › Juice', price: 75, disc: 70, inStock: true, unit: { base: 'L', qty: 1 } },
+    { id: 'd', title: 'Coffee', brand: 'Tata', cat: 'Drinks › Coffee', price: 100, disc: 55, inStock: true },
+    { id: 'e', title: 'Salt', brand: 'Tata', cat: 'Staples › Salt', price: 49.99, disc: 65, inStock: false, unit: { base: 'kg', qty: 1 } },
+  ];
+  const filterState = { q: '', tab: 'best', products: new Map(compareDeals.map(p => [p.id, p])), cat: 'Staples' };
+  const { filtered: selectDeals, refinementUI } = new Function('S', 'store', 'esc', 'chip', '$inr',
+    src.slice(filterStart, filterEnd) + grabFn('refinementUI') + '\nreturn { filtered, refinementUI };')(
+    filterState, filterSettings, lib.esc, () => '', n => '₹' + n);
+  const matches = () => selectDeals().map(p => p.id).join();
+  check('category and price-band chips combine with a minimum discount in Best deals', matches() === 'a,b');
+  Object.assign(filterState, { tab: 'all', cat: '' });
+  filterSettings.priceBand = 'under200';
+  check('minimum discount excludes deals in the selected price band', matches() === '');
+  filterSettings.minDisc = 0;
+  check('price bands have nonoverlapping limits and include the lower boundary', matches() === 'd');
+  filterState.unitBase = 'kg';
+  filterSettings.priceBand = 'under100';
+  filterSettings.sort = 'unit';
+  check('compare per kg filters out litres and sorts by normalized unit price', matches() === 'b,a');
+  filterState.q = 'sampann';
+  check('search matches a product brand even when it is not in the title', matches() === 'a');
+  Object.assign(filterState, { q: '', tab: 'saved' });
+  check('saved view keeps active facets and only shows saved items', matches() === 'a');
+  filterState.tab = 'all';
+  filterSettings.priceBand = 'under50';
+  check('out-of-stock results remain excluded by the stock setting', matches() === '');
+  filterSettings.stockOnly = false;
+  check('under ₹50 includes fractional prices below the boundary', matches() === 'e');
+
+  filterState.unitBase = '';
+  filterSettings.priceBand = '';
+  filterState.products = new Map([
+    ['d', { ...compareDeals[3], save: 50 }],
+    ['a', { ...compareDeals[0], save: 100, unit: undefined }],
+  ]);
+  const noUnits = refinementUI();
+  check('saved unit price sort falls back to the displayed Best deal sort when no product has units',
+    matches() === 'a,d' && noUnits.includes('<option value="score" selected>Best deal')
+    && !noUnits.includes('<option value="unit"') && filterSettings.sort === 'unit');
+
+  const storeCode = src.slice(src.indexOf('  const defaults ='), src.indexOf('  store.groups ='));
+  const clickCode = src.slice(src.indexOf("  root.addEventListener('click'"), src.indexOf("  document.addEventListener('keydown'"));
+  const pricePanel = new Function('S', 'P', 'KEY', 'localStorage', 'root', 'render', '$inr',
+    storeCode + src.slice(filterStart, filterEnd) + eventCode + clickCode + '\nreturn filtered;');
+  let savedSettings = JSON.stringify({ minDisc: 0, maxPrice: 75 });
+  const priceStorage = { getItem: () => savedSettings, setItem: (_, value) => { savedSettings = value; } };
+  const priceHandlers = {};
+  const loadPrices = () => pricePanel({ q: '', tab: 'all', products: new Map(compareDeals.map(p => [p.id, p])) },
+    { locInput: () => false }, 'test', priceStorage,
+    { addEventListener: (name, fn) => { priceHandlers[name] = fn; }, getElementById: () => null }, () => {}, n => '₹' + n);
+  const click = (act, id) => priceHandlers.click({ target: { closest: () => ({ dataset: { act, id } }) } });
+  const ids = deals => deals().map(p => p.id).sort().join();
+  const capped = loadPrices();
+  const beforeBand = ids(capped);
+  click('priceband', 'under100');
+  check('price band replaces a saved custom max and still applies after reload',
+    beforeBand === 'a,c' && ids(capped) === 'a,b,c' && ids(loadPrices()) === 'a,b,c');
+  priceHandlers.input({ target: { dataset: { in: 'maxPrice' }, value: '100' } });
+  check('custom max replaces the saved price band after reload', ids(loadPrices()) === 'a,b,c,d');
+  click('priceband', 'under50');
+  click('resetfilters');
+  check('reset clears the saved price band after reload', ids(loadPrices()) === 'a,b,c,d');
+
   console.log('== 7. highest-discount fixture: 85-95% off items render, highest first ==');
   const hd = JSON.parse(fs.readFileSync(path.join(ROOT, 'fixtures/sample-high-discount.json'), 'utf8'));
   const hdItems = lib.extract(hd, 'High-discount');
@@ -208,7 +274,7 @@ function renderCards(products) {
   check('highest discount renders FIRST in the results tab (95% item first)', hdVisible[0].id === 'B0HD000003', 'first ' + hdVisible[0].id);
   const hdCards = renderCards(hdVisible);
   const firstCard = hdCards.split('<article')[1] || '';
-  check('first rendered card is the 95% off item', firstCard.indexOf('95% OFF') !== -1 && firstCard.indexOf('High Discount Number MRP Dal 1 kg') !== -1);
+  check('first rendered card is the 95% off item', firstCard.indexOf('95% <small>OFF</small>') !== -1 && firstCard.indexOf('High Discount Number MRP Dal 1 kg') !== -1);
 
   console.log('\n' + (fail ? 'FAIL: ' + fail + ' check(s) failed, ' + pass + ' passed' : 'PASS: all ' + pass + ' checks passed (70 items -> 70 cards)'));
   process.exit(fail ? 1 : 0);
