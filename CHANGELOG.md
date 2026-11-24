@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Redesigned the deal workspace with a light toolbar, compact product cards, and visible category, discount, price-band, brand, and unit filters. Custom filters and exports are in Tools.
 - Browser and Telegram bot scans follow Amazon's next-page offset, even when an intermediate page has no products.
 - Browser scans show every distinct failure reason and count repeated failures, even when some categories still return deals.
 - Dragging the scan depth, minimum discount, and maximum price sliders no longer rebuilds the controls on each input.
