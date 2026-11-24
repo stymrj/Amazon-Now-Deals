@@ -198,7 +198,9 @@ function renderCards(products) {
     { id: 'e', title: 'Salt', brand: 'Tata', cat: 'Staples › Salt', price: 49.99, disc: 65, inStock: false, unit: { base: 'kg', qty: 1 } },
   ];
   const filterState = { q: '', tab: 'best', products: new Map(compareDeals.map(p => [p.id, p])), cat: 'Staples', priceBand: 'under100' };
-  const selectDeals = new Function('S', 'store', src.slice(filterStart, filterEnd) + '\nreturn filtered;')(filterState, filterSettings);
+  const { filtered: selectDeals, refinementUI } = new Function('S', 'store', 'esc', 'chip', '$inr',
+    src.slice(filterStart, filterEnd) + grabFn('refinementUI') + '\nreturn { filtered, refinementUI };')(
+    filterState, filterSettings, lib.esc, () => '', n => '₹' + n);
   const matches = () => selectDeals().map(p => p.id).join();
   check('category and price-band chips combine with a minimum discount in Best deals', matches() === 'a,b');
   Object.assign(filterState, { tab: 'all', cat: '', priceBand: 'under200' });
@@ -216,6 +218,16 @@ function renderCards(products) {
   check('out-of-stock results remain excluded by the stock setting', matches() === '');
   filterSettings.stockOnly = false;
   check('under ₹50 includes fractional prices below the boundary', matches() === 'e');
+
+  Object.assign(filterState, { priceBand: '', unitBase: '' });
+  filterState.products = new Map([
+    ['d', { ...compareDeals[3], save: 50 }],
+    ['a', { ...compareDeals[0], save: 100, unit: undefined }],
+  ]);
+  const noUnits = refinementUI();
+  check('saved unit price sort falls back to the displayed Best deal sort when no product has units',
+    matches() === 'a,d' && noUnits.includes('<option value="score" selected>Best deal')
+    && !noUnits.includes('<option value="unit"') && filterSettings.sort === 'unit');
 
   console.log('== 7. highest-discount fixture: 85-95% off items render, highest first ==');
   const hd = JSON.parse(fs.readFileSync(path.join(ROOT, 'fixtures/sample-high-discount.json'), 'utf8'));

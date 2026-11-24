@@ -358,6 +358,14 @@
     }],
     name: ['Name A–Z', (a, b) => a.title.localeCompare(b.title)]
   };
+  function hasUnitPrices() {
+    for (const p of S.products.values()) if (p.unit?.base in UNIT_LABELS) return true;
+    return false;
+  }
+  function effectiveSort(hasUnits) {
+    if (store.sort === 'unit' && !(hasUnits ?? hasUnitPrices())) return 'score';
+    return SORTS[store.sort] ? store.sort : 'disc';
+  }
   function filtered() {
     const q = S.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const fav = new Set(store.favs), hid = new Set(store.hidden);
@@ -378,7 +386,7 @@
       if (q.length) { const t = (p.title + ' ' + (p.brand || '') + ' ' + p.cat).toLowerCase(); if (!q.every(w => t.includes(w))) return; }
       out.push(p);
     });
-    return out.sort((SORTS[store.sort] || SORTS.disc)[1]);
+    return out.sort(SORTS[effectiveSort()][1]);
   }
 
   // ───────────────────────── UI ─────────────────────────
@@ -749,6 +757,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
     const categories = [...new Set(products.map(categoryOf).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const brands = [...new Set(products.map(p => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const units = new Set(products.map(p => p.unit?.base));
+    const hasUnits = hasUnitPrices(), sort = effectiveSort(hasUnits);
     if (S.cat && !categories.includes(S.cat)) categories.push(S.cat);
     if (S.brand && !brands.includes(S.brand)) brands.push(S.brand);
     if (S.unitBase) units.add(S.unitBase);
@@ -763,7 +772,7 @@ kbd{border:1px solid var(--bd);border-radius:5px;padding:0 5px;font-size:11px;fo
  <div class="refinerow">
   ${brands.length ? `<label class="facet"><span class="label">Brand</span><select data-in="brand">${option('', 'All brands', !S.brand)}${brands.map(b => option(b, b, S.brand === b)).join('')}</select></label>` : ''}
   ${Object.keys(UNIT_LABELS).some(unit => units.has(unit)) ? `<label class="facet"><span class="label">Compare</span><select data-in="unitBase">${option('', 'Any unit', !S.unitBase)}${Object.entries(UNIT_LABELS).filter(([unit]) => units.has(unit)).map(([unit, label]) => option(unit, label, S.unitBase === unit)).join('')}</select></label>` : ''}
-  ${S.tab !== 'best' ? `<label class="facet"><span class="label">Sort</span><select data-in="sort">${Object.entries(SORTS).filter(([id]) => id !== 'unit' || Object.keys(UNIT_LABELS).some(unit => units.has(unit))).map(([id, [label]]) => option(id, label, store.sort === id)).join('')}</select></label>
+  ${S.tab !== 'best' ? `<label class="facet"><span class="label">Sort</span><select data-in="sort">${Object.entries(SORTS).filter(([id]) => id !== 'unit' || hasUnits).map(([id, [label]]) => option(id, label, sort === id)).join('')}</select></label>
   <div class="facet" role="group" aria-label="Card layout">${chip('view', 'grid', 'Grid', store.view === 'grid')}${chip('view', 'list', 'List', store.view === 'list')}</div>` : ''}
   <div class="facet" role="group" aria-label="Deal signals">${Object.entries(PRESETS).map(([id, [label]]) => chip('preset', id, label, S.preset === id)).join('')}</div>
   <button class="reset" data-act="resetfilters">Reset filters</button>
